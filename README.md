@@ -30,7 +30,9 @@ to run the kernel you can run one of these following commands:
 - `make run-debug` which will run the kernel with interrupt logging and without kvm,
 - `make run-gdb` which will run the kernel in default configuration without kvm and with a gdb server set up on port 1234
 
-if you want to use any of these command with a uefi compatible image, add `FIRMWARE=uefi` to the command
+if you want to use any of these command with a uefi compatible image, add `FIRMWARE=uefi` to the command, i strongly
+recommend to use the legacy bios images for testing due to the uefi firmware being terribly slow for some reaosn and
+only use the uefi images if you want to make sure everything is working for both legacy and uefi modes
 
 ## license
 

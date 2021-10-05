@@ -82,5 +82,5 @@ build/kernel/%.cpp.o: kernel/%.cpp $(HEADERS)
 
 build/kernel.elf: $(OBJECTS)
 	@$(MKDIR)
-	@$(ECHO) "\e[37mkernel \e[92mLD\e[m " $@
+	@$(ECHO) "\e[37mkernel \e[92mLD\e[m" $@
 	@$(LD) $(LD_FLAGS) -o $@ $^

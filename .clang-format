@@ -1,0 +1,11 @@
+PointerAlignment: Right
+IncludeBlocks: Preserve
+AlwaysBreakTemplateDeclarations: Yes
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+SpaceAfterCStyleCast: true
+AccessModifierOffset: -4
+ColumnLimit: 140
+IndentWidth: 4

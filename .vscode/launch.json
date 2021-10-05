@@ -1,0 +1,17 @@
+{
+  "configurations": [
+    {
+      "type": "by-gdb",
+      "request": "launch",
+      "name": "Attach to QEMU",
+      "program": "build/kernel.elf",
+      "cwd": "${workspaceRoot}",
+      "remote": {
+        "enabled": true,
+        "address": ":1234",
+        "mode": "remote",
+        "execfile": "build/kernel.elf"
+      }
+    }
+  ]
+}

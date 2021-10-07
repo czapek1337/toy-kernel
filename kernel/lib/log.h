@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "../arch/asm.h"
+#include "../ds/lock.h"
 
 enum log_level_t : uint8_t {
     LOG_LEVEL_DEBUG,
@@ -110,6 +111,8 @@ class formatter_t<const char (&)[N]> {
 
 namespace detail {
 
+inline lock_t log_lock;
+
 template <typename T>
 void format_arg(const T &value, const format_options_t &options) {
     formatter_t<T>::format(value, options);
@@ -149,14 +152,31 @@ void print_format(const char *format, Args &&...args) {
 }
 
 template <typename... Args>
-void print_format_log(log_level_t level, const char *file, int line, const char *format, Args &&...args) {
+void print_format_log_unlocked(log_level_t level, const char *file, int line, const char *format, Args &&...args) {
     print_format("\e[1m[{}]\e[m [{}:{}] ", level, file, line);
     print_format(format, args...);
 
     format_arg('\n', {});
 }
 
+template <typename... Args>
+void print_format_log(log_level_t level, const char *file, int line, const char *format, Args &&...args) {
+    lock_guard_t lock(log_lock);
+
+    print_format_log_unlocked(level, file, line, format, args...);
+}
+
 } // namespace detail
+
+#define log_debug_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
+#define log_info_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define log_warn_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_WARN, __FILE__, __LINE__, __VA_ARGS__)
+#define log_error_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+#define log_fatal_unlocked(...)                                                                                                            \
+    do {                                                                                                                                   \
+        detail::print_format_log_unlocked(LOG_LEVEL_FATAL, __FILE__, __LINE__, __VA_ARGS__);                                               \
+        arch::halt();                                                                                                                      \
+    } while (true)
 
 #define log_debug(...) detail::print_format_log(LOG_LEVEL_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
 #define log_info(...) detail::print_format_log(LOG_LEVEL_INFO, __FILE__, __LINE__, __VA_ARGS__)

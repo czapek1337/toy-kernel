@@ -1,8 +1,10 @@
 #include "gdt.h"
+#include "../ds/lock.h"
 #include "../lib/log.h"
 
 #define ENTRY_INDEX(entry) (entry / 8)
 
+static lock_t gdt_lock;
 static tss_t tss;
 static gdt_t gdt;
 
@@ -10,6 +12,8 @@ extern "C" void update_gdt(gdt_descriptor_t *desc, uint16_t code_selector, uint1
 extern "C" void update_tss(uint16_t selector);
 
 void arch::init_gdt() {
+    lock_guard_t lock(gdt_lock);
+
     __builtin_memset(&gdt, 0, sizeof(gdt));
 
     gdt.entries[ENTRY_INDEX(GDT_KERNEL_BASE)] = gdt_entry_t(0, 0);
@@ -28,6 +32,8 @@ void arch::init_gdt() {
 }
 
 void arch::init_tss() {
+    lock_guard_t lock(gdt_lock);
+
     __builtin_memset(&tss, 0, sizeof(tss));
 
     gdt.tss_entry = tss_entry_t((uint64_t) &tss);

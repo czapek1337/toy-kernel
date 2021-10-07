@@ -1,7 +1,10 @@
 #include "vmm.h"
+#include "../ds/lock.h"
 #include "../lib/addr.h"
 #include "../lib/log.h"
 #include "pmm.h"
+
+static lock_t vmm_lock;
 
 static page_table_t *get_page_table(page_table_t *root, uint64_t index, bool create) {
     auto entry = &root->get(index);
@@ -52,12 +55,16 @@ static void unmap_page(page_table_t *root, uint64_t virt_addr) {
 }
 
 void page_table_t::map(uint64_t virt_addr, uint64_t phys_addr, uint64_t size, uint64_t flags) {
+    lock_guard_t lock(vmm_lock);
+
     for (auto i = 0ul; i < size / 4096; i++) {
         map_page(this, virt_addr + i * 4096, phys_addr + i * 4096, flags);
     }
 }
 
 void page_table_t::unmap(uint64_t virt_addr, uint64_t size) {
+    lock_guard_t lock(vmm_lock);
+
     for (auto i = 0ul; i < size / 4096; i++) {
         unmap_page(this, virt_addr + i * 4096);
     }

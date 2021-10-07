@@ -1,11 +1,36 @@
 #include "pmm.h"
 #include "../ds/bitmap.h"
 #include "../lib/addr.h"
+#include "../lib/log.h"
 
 static bitmap_t pmm_bitmap;
+static uint64_t best_bet;
+
+const char *mmap_type_to_string(uint32_t type) {
+    switch (type) {
+    case STIVALE2_MMAP_USABLE: return "USABLE";
+    case STIVALE2_MMAP_RESERVED: return "RESERVED";
+    case STIVALE2_MMAP_ACPI_RECLAIMABLE: return "ACPI_RECLAIMABLE";
+    case STIVALE2_MMAP_ACPI_NVS: return "ACPI_NVS";
+    case STIVALE2_MMAP_BAD_MEMORY: return "BAD_MEMORY";
+    case STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE: return "BOOTLOADER_RECLAIMABLE";
+    case STIVALE2_MMAP_KERNEL_AND_MODULES: return "KERNEL_AND_MODULES";
+    case STIVALE2_MMAP_FRAMEBUFFER: return "FRAMEBUFFER";
+    }
+
+    return "UNKNOWN";
+}
 
 void pmm::init(stivale2_struct_mmap_tag_t *mmap) {
-    auto highest_addr = 0ull;
+    log_info("Current system memory map:");
+
+    for (auto i = 0; i < mmap->count; i++) {
+        auto entry = &mmap->mmap[i];
+
+        log_info(" - base={#016x}, size={#08x}, type={}", entry->base, entry->size, mmap_type_to_string(entry->type));
+    }
+
+    auto highest_addr = 0ul;
 
     for (auto i = 0; i < mmap->count; i++) {
         auto entry = &mmap->mmap[i];
@@ -16,7 +41,7 @@ void pmm::init(stivale2_struct_mmap_tag_t *mmap) {
     }
 
     auto bitmap_size = highest_addr / 4096 / 8;
-    auto bitmap_addr = 0ull;
+    auto bitmap_addr = 0ul;
 
     for (auto i = 0; bitmap_addr == 0 && i < mmap->count; i++) {
         auto entry = &mmap->mmap[i];
@@ -25,9 +50,10 @@ void pmm::init(stivale2_struct_mmap_tag_t *mmap) {
             bitmap_addr = entry->base;
     }
 
-    bitmap_addr = phys_to_io(bitmap_addr);
+    if (bitmap_addr == 0)
+        log_fatal("Could not find a suitable memory region for the bitmap of size of {} bytes", bitmap_size);
 
-    pmm_bitmap = bitmap_t((uint8_t *) bitmap_addr, bitmap_size);
+    pmm_bitmap = bitmap_t((uint8_t *) phys_to_io(bitmap_addr), bitmap_size);
     pmm_bitmap.set_range(0, bitmap_size * 8, false);
 
     for (auto i = 0; i < mmap->count; i++) {
@@ -38,18 +64,29 @@ void pmm::init(stivale2_struct_mmap_tag_t *mmap) {
     }
 
     pmm_bitmap.set_range(0, 4, false);
-    pmm_bitmap.set_range(io_to_phys(bitmap_addr) / 4096, bitmap_size / 4096, false);
+    pmm_bitmap.set_range(bitmap_addr / 4096, align_up(bitmap_size, 4096) / 4096, false);
 }
 
 uint64_t pmm::alloc(uint64_t count) {
-    auto addr = pmm_bitmap.find_first_range(0, count, true);
+    auto addr = pmm_bitmap.find_first_range(best_bet, count, true);
 
-    if (addr == -1)
-        return 0;
+    if (addr != -1) {
+        pmm_bitmap.set_range(addr, count, false);
+        best_bet = addr + count;
 
-    pmm_bitmap.set_range(addr, count, false);
+        return addr * 4096;
+    }
 
-    return addr * 4096;
+    if (best_bet != 0) {
+        best_bet = 0;
+
+        return alloc(count);
+    }
+
+    if (count == 1)
+        log_fatal("Could not allocate a single page");
+
+    log_fatal("Could not allocate {} pages, if you don't need contigous memory, try allocating them one by one", count);
 }
 
 void pmm::free(uint64_t addr, uint64_t count) {

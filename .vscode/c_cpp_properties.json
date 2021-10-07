@@ -1,0 +1,12 @@
+{
+  "configurations": [
+    {
+      "name": "nucon-kernel",
+      "intelliSenseMode": "linux-gcc-x64",
+      "compilerPath": "/usr/bin/clang-12",
+      "cppStandard": "gnu++20",
+      "cStandard": "c11"
+    }
+  ],
+  "version": 4
+}

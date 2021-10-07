@@ -1,5 +1,6 @@
 #include "vmm.h"
 #include "../lib/addr.h"
+#include "../lib/log.h"
 #include "pmm.h"
 
 static page_table_t *get_page_table(page_table_t *root, uint64_t index, bool create) {
@@ -29,7 +30,7 @@ static void map_page(page_table_t *root, uint64_t virt_addr, uint64_t phys_addr,
     auto entry = &pml1->get((virt_addr >> 12) & 0x1ff);
 
     if (entry->get_flags() & PAGE_TABLE_ENTRY_PRESENT)
-        return; // TODO: Panic - address is already mapped
+        log_fatal("Tried to map an address {#016x} that is already mapped to", virt_addr);
 
     entry->set_address(phys_addr);
     entry->set_flags(flags);
@@ -42,7 +43,7 @@ static void unmap_page(page_table_t *root, uint64_t virt_addr) {
     auto entry = pml1 ? &pml1->get((virt_addr >> 12) & 0x1ff) : nullptr;
 
     if (!entry || !(entry->get_flags() & PAGE_TABLE_ENTRY_PRESENT))
-        return; // TODO: Panic - address is not mapped
+        log_fatal("Tried to unmap an address {#016x} that is not mapped", virt_addr);
 
     entry->set_address(0);
     entry->set_flags(0);
@@ -51,13 +52,13 @@ static void unmap_page(page_table_t *root, uint64_t virt_addr) {
 }
 
 void page_table_t::map(uint64_t virt_addr, uint64_t phys_addr, uint64_t size, uint64_t flags) {
-    for (auto i = 0; i < size / 4096; i++) {
+    for (auto i = 0ul; i < size / 4096; i++) {
         map_page(this, virt_addr + i * 4096, phys_addr + i * 4096, flags);
     }
 }
 
 void page_table_t::unmap(uint64_t virt_addr, uint64_t size) {
-    for (auto i = 0; i < size / 4096; i++) {
+    for (auto i = 0ul; i < size / 4096; i++) {
         unmap_page(this, virt_addr + i * 4096);
     }
 }
@@ -67,6 +68,8 @@ void vmm::init(stivale2_struct_pmrs_tag_t *pmrs) {
     auto pt = (page_table_t *) phys_to_io(pt_phys);
 
     __builtin_memset(pt, 0, sizeof(page_table_t));
+
+    log_info("The new kernel page table is allocated at {#016x}", pt_phys);
 
     pt->map(0, 0, gib(4), PAGE_TABLE_ENTRY_PRESENT | PAGE_TABLE_ENTRY_WRITE);
     pt->map(phys_to_io(0), 0, gib(4), PAGE_TABLE_ENTRY_PRESENT | PAGE_TABLE_ENTRY_WRITE);
@@ -89,4 +92,6 @@ void vmm::init(stivale2_struct_pmrs_tag_t *pmrs) {
     kernel_pt = pt;
 
     asm("mov %0, %%cr3" : : "r"(pt_phys));
+
+    log_info("Successfully switched to the new kernel page table");
 }

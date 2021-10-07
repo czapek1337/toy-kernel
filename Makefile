@@ -21,7 +21,7 @@ LD   = ld.lld
 QEMU = qemu-system-x86_64
 
 ASM_FLAGS  = -f elf64
-CXX_FLAGS  = -target x86_64-none-elf -fno-exceptions -fno-rtti -ffreestanding -mcmodel=kernel -std=c++17 -g -O0 -mno-sse -mno-sse2
+CXX_FLAGS  = -target x86_64-none-elf -fno-exceptions -fno-rtti -ffreestanding -mcmodel=kernel -std=c++2b -g -O0 -mno-sse -mno-sse2
 LD_FLAGS   = -m elf_x86_64 -z max-page-size=0x1000 -T misc/kernel.ld
 QEMU_FLAGS = -serial stdio -drive format=raw,file=build/disk.img -m 4G
 

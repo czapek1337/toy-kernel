@@ -16,7 +16,7 @@ void lock_t::lock() {
         if (try_lock())
             break;
 
-        asm("pause");
+        arch::pause();
     }
 }
 

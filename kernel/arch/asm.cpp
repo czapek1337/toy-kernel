@@ -1,10 +1,16 @@
 #include "asm.h"
 
+void arch::pause() {
+    asm("pause");
+}
+
 void arch::halt() {
-    while (true) {
-        asm("cli");
-        asm("hlt");
-    }
+    asm("hlt");
+}
+
+void arch::halt_forever() {
+    asm("cli");
+    asm("hlt");
 }
 
 void arch::io_outb(uint16_t port, uint8_t value) {

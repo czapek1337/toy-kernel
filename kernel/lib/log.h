@@ -175,7 +175,8 @@ void print_format_log(log_level_t level, const char *file, int line, const char 
 #define log_fatal_unlocked(...)                                                                                                            \
     do {                                                                                                                                   \
         detail::print_format_log_unlocked(LOG_LEVEL_FATAL, __FILE__, __LINE__, __VA_ARGS__);                                               \
-        arch::halt();                                                                                                                      \
+        while (true)                                                                                                                       \
+            arch::halt_forever();                                                                                                          \
     } while (true)
 
 #define log_debug(...) detail::print_format_log(LOG_LEVEL_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
@@ -185,13 +186,14 @@ void print_format_log(log_level_t level, const char *file, int line, const char 
 #define log_fatal(...)                                                                                                                     \
     do {                                                                                                                                   \
         detail::print_format_log(LOG_LEVEL_FATAL, __FILE__, __LINE__, __VA_ARGS__);                                                        \
-        arch::halt();                                                                                                                      \
+        while (true)                                                                                                                       \
+            arch::halt_forever();                                                                                                          \
     } while (true)
 
 #define assert_msg(cond, ...)                                                                                                              \
     do {                                                                                                                                   \
         if (!(cond))                                                                                                                       \
-            log_fatal(__VA_ARGS__);                                                                                                        \
-    } while (true)
+            log_fatal_unlocked(__VA_ARGS__);                                                                                               \
+    } while (false)
 
 #define assert(cond) assert_msg(cond, "Assertion failed: {}", #cond)

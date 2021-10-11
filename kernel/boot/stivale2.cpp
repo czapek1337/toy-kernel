@@ -7,10 +7,10 @@ static stivale2_header_framebuffer_tag_t framebuffer_tag = {
     .bpp = 32,
 };
 
-__attribute__((aligned(16), section(".bss"))) //
+[[gnu::aligned(16)]] //
 static uint8_t kernel_stack[8192];
 
-__attribute__((section(".stivale2hdr"), used)) //
+[[gnu::section(".stivale2hdr"), gnu::used]] //
 static stivale2_header_t header = {
     .entry = 0,
     .stack = (uint64_t) &kernel_stack[sizeof(kernel_stack)],

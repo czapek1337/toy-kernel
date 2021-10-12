@@ -63,6 +63,24 @@ static void print_integer(int64_t value, const format_options_t &options) {
     }
 }
 
+void detail::print_backtrace() {
+    uint64_t rbp;
+
+    asm("mov %%rbp, %0" : "=r"(rbp));
+
+    log_info_unlocked("Stack backtrace:");
+
+    while (rbp) {
+        auto frame = (uint64_t *) rbp;
+        auto new_rbp = *frame++;
+        auto rip = *frame;
+
+        log_info_unlocked(" - {#016x}", rip);
+
+        rbp = new_rbp;
+    }
+}
+
 const char *format_options_t::parse_align(const char *options) {
     set_fill_char(' ');
     set_alignment(FMT_ALIGN_NONE);

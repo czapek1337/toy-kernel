@@ -27,6 +27,8 @@ void kernel_main(stivale2_struct_t *boot_info) {
     pmm::init(mmap);
     vmm::init(pmrs);
 
+    heap::init();
+
     // Halt indefinitely - once we have a scheduler, it will take over from here
     while (true) {
         arch::halt();

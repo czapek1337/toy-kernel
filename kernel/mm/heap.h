@@ -4,6 +4,8 @@
 
 namespace heap {
 
+void init();
+
 uint64_t alloc(uint64_t size);
 
 void free(uint64_t addr);

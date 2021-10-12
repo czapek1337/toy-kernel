@@ -44,6 +44,6 @@ namespace vmm {
 
 void init(stivale2_struct_pmrs_tag_t *pmrs);
 
-inline page_table_t *kernel_pt;
+inline page_table_t *kernel_pml4;
 
 } // namespace vmm

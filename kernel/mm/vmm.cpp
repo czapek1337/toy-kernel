@@ -96,7 +96,7 @@ void vmm::init(stivale2_struct_pmrs_tag_t *pmrs) {
         pt->map(pmr->base, kernel_to_phys(pmr->base), align_up(pmr->size, 4096), flags);
     }
 
-    kernel_pt = pt;
+    kernel_pml4 = pt;
 
     asm("mov %0, %%cr3" : : "r"(pt_phys));
 

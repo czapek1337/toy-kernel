@@ -1,39 +1,17 @@
 #include "heap.h"
+#include "../ds/linked_list.h"
 #include "../ds/lock.h"
 #include "../lib/addr.h"
 #include "../lib/log.h"
 #include "pmm.h"
 #include "vmm.h"
 
-struct heap_block_t {
-    heap_block_t *prev;
-    heap_block_t *next;
+// This is an adapted version of Embedded Artistry's malloc implementation that's contained in
+// their libmemory repository: https://github.com/embeddedartistry/libmemory/
+
+struct heap_block_t : linked_list_node_t<heap_block_t> {
     uint64_t size;
 };
-
-static void block_insert(heap_block_t *entry, heap_block_t *prev, heap_block_t *next) {
-    entry->next = next;
-    entry->prev = prev;
-
-    prev->next = entry;
-    next->prev = entry;
-}
-
-static void block_add(heap_block_t *entry, heap_block_t *head) {
-    block_insert(entry, head, head->next);
-}
-
-static void block_add_tail(heap_block_t *entry, heap_block_t *head) {
-    block_insert(entry, head->prev, head);
-}
-
-static void block_remove(heap_block_t *entry) {
-    entry->prev->next = entry->next;
-    entry->next->prev = entry->prev;
-
-    entry->prev = nullptr;
-    entry->next = nullptr;
-}
 
 constexpr auto heap_base_offset = gib(8);
 constexpr auto heap_initial_size = kib(64);
@@ -52,18 +30,17 @@ static heap_block_t *create_block(uint64_t size) {
 
     vmm::kernel_pml4->map((uint64_t) block, block_phys, pages * 4096, PAGE_TABLE_ENTRY_PRESENT | PAGE_TABLE_ENTRY_WRITE);
 
-    block->prev = nullptr;
-    block->next = nullptr;
     block->size = pages * 4096 - sizeof(heap_block_t);
 
     return block;
 }
 
 void heap::init() {
-    heap_root.prev = &heap_root;
-    heap_root.next = &heap_root;
+    heap_root.insert(&heap_root, &heap_root);
 
-    block_add(create_block(heap_initial_size), &heap_root);
+    auto new_block = create_block(heap_initial_size);
+
+    new_block->insert_front(&heap_root);
 
     log_info("Successfully initialized the heap with {}KiB of memory", heap_initial_size / kib(1));
 }
@@ -80,7 +57,7 @@ uint64_t heap::alloc(uint64_t size) {
     size = align_up(size, 8);
 
     // Try to make an allocation from existing blocks
-    for (auto block = heap_root.next; block != &heap_root; block = block->next) {
+    for (auto block = heap_root.next(); block != &heap_root; block = block->next()) {
         // Check if the block is big enough to hold our allocation
         if (block->size < size)
             continue;
@@ -94,10 +71,10 @@ uint64_t heap::alloc(uint64_t size) {
 
             block->size = size;
 
-            block_insert(new_block, block, block->next);
+            new_block->insert(block, block->next());
         }
 
-        block_remove(block);
+        block->remove();
 
         heap_lock.unlock();
 
@@ -105,7 +82,9 @@ uint64_t heap::alloc(uint64_t size) {
     }
 
     // Allocate a fresh block of heap memory for the next run
-    block_add(create_block(size), &heap_root);
+    auto new_block = create_block(size);
+
+    new_block->insert_front(&heap_root);
 
     heap_lock.unlock();
 
@@ -124,10 +103,10 @@ void heap::free(uint64_t addr) {
     auto add_to_the_tail = true;
 
     // Lets put that block back in its correct spot in the free list
-    for (auto it_block = heap_root.next; add_to_the_tail && it_block != &heap_root; it_block = it_block->next) {
+    for (auto it_block = heap_root.next(); add_to_the_tail && it_block != &heap_root; it_block = it_block->next()) {
         // Check if the block we're attempting to free comes before the current block
         if (it_block > block) {
-            block_insert(block, it_block->prev, it_block);
+            block->insert(it_block->prev(), it_block);
 
             add_to_the_tail = false;
         }
@@ -136,24 +115,24 @@ void heap::free(uint64_t addr) {
     // If the block could not be put back into its proper place, put it
     // back at the heap's tail
     if (add_to_the_tail) {
-        block_add_tail(block, &heap_root);
+        block->insert_back(&heap_root);
     }
     // Else, merge any adjacent blocks to reduce fragmentation
     else {
-        heap_block_t *previous = nullptr;
+        heap_block_t *last_block = nullptr;
 
-        for (auto it_block = heap_root.next, next = it_block->next; it_block != &heap_root; it_block = next, next = it_block->next) {
-            auto previous_data = (uint64_t) previous + sizeof(heap_block_t);
+        for (auto it_block = heap_root.next(), next = it_block->next(); it_block != &heap_root; it_block = next, next = it_block->next()) {
+            auto previous_data = (uint64_t) last_block + sizeof(heap_block_t);
 
-            if (previous && previous_data + previous->size == (uint64_t) it_block) {
-                previous->size += sizeof(heap_block_t) + it_block->size;
+            if (last_block && previous_data + last_block->size == (uint64_t) it_block) {
+                last_block->size += sizeof(heap_block_t) + it_block->size;
 
-                block_remove(it_block);
+                it_block->remove();
 
                 continue;
             }
 
-            previous = it_block;
+            last_block = it_block;
         }
     }
 }

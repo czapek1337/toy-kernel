@@ -15,7 +15,9 @@ interrupt_retainer_t::~interrupt_retainer_t() {
 
 void intr::retain_disable() {
     assert_msg(retain_enabled, "retain_disable() called when interrupt retaining was not enabled");
-    assert_msg(retain_depth == 0, "retain_disable() called when interrupts were retained");
+
+    if (retain_depth > 0)
+        log_warn("retain_disable() called when interrupts were retained (retain depth is {})", retain_depth);
 
     retain_enabled = false;
 }

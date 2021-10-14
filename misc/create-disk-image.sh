@@ -35,7 +35,6 @@ sudo mount `cat $LOOPBACK`p1 $DISK_ROOT >/dev/null 2>&1
 # Copy the files needed to boot over
 sudo cp $BUILD_DIR/kernel.elf $DISK_ROOT
 sudo cp $MISC_DIR/limine.cfg $DISK_ROOT
-sudo cp $MISC_DIR/boot_logo.bmp $DISK_ROOT
 
 if [ "$CMD" = "bios" ]; then
     sudo cp $LIMINE_DIR/limine.sys $DISK_ROOT

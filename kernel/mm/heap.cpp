@@ -136,3 +136,19 @@ void heap::free(uint64_t addr) {
         }
     }
 }
+
+void *operator new(uint64_t size) {
+    return (void *) heap::alloc(size);
+}
+
+void *operator new[](uint64_t size) {
+    return (void *) heap::alloc(size);
+}
+
+void operator delete(void *ptr) {
+    heap::free((uint64_t) ptr);
+}
+
+void operator delete[](void *ptr) {
+    heap::free((uint64_t) ptr);
+}

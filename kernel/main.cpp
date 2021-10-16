@@ -1,3 +1,4 @@
+#include "acpi/acpi.h"
 #include "arch/gdt.h"
 #include "arch/idt.h"
 #include "boot/stivale2.h"
@@ -27,7 +28,11 @@ void kernel_main(stivale2_struct_t *boot_info) {
     pmm::init(mmap);
     vmm::init(pmrs);
 
+    // Initialize heap for dynamic memory allocation
     heap::init();
+
+    // Scan the ACPI tables
+    acpi::init(rsdp);
 
     // Halt indefinitely - once we have a scheduler, it will take over from here
     while (true) {

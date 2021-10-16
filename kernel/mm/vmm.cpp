@@ -85,10 +85,7 @@ void vmm::init(stivale2_struct_pmrs_tag_t *pmrs) {
 
     log_info("The new kernel page table is allocated at {#016x}", pt_phys);
 
-    pt->map(0, 0, gib(4), PAGE_TABLE_ENTRY_PRESENT | PAGE_TABLE_ENTRY_WRITE);
     pt->map(phys_to_io(0), 0, gib(4), PAGE_TABLE_ENTRY_PRESENT | PAGE_TABLE_ENTRY_WRITE);
-
-    pt->unmap(0, 4096);
 
     for (auto i = 0; i < pmrs->count; i++) {
         auto pmr = &pmrs->pmrs[i];

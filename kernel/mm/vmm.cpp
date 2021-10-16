@@ -33,7 +33,7 @@ static void map_page(page_table_t *root, uint64_t virt_addr, uint64_t phys_addr,
     auto entry = &pml1->get((virt_addr >> 12) & 0x1ff);
 
     if (entry->get_flags() & PAGE_TABLE_ENTRY_PRESENT)
-        log_fatal("Tried to map an address {#016x} that is already mapped to", virt_addr);
+        log_fatal("Tried to map an address {#016x} that is already mapped to {#016x}", virt_addr, entry->get_address());
 
     entry->set_address(phys_addr);
     entry->set_flags(flags);
@@ -55,6 +55,10 @@ static void unmap_page(page_table_t *root, uint64_t virt_addr) {
 }
 
 void page_table_t::map(uint64_t virt_addr, uint64_t phys_addr, uint64_t size, uint64_t flags) {
+    assert_msg((virt_addr % 0x1000) == 0, "Virtual address must be page aligned");
+    assert_msg((phys_addr % 0x1000) == 0, "Physical address must be page aligned");
+    assert_msg((size % 0x1000) == 0, "Size must be expressed in pages");
+
     lock_guard_t lock(vmm_lock);
 
     for (auto i = 0ul; i < size / 4096; i++) {
@@ -63,6 +67,9 @@ void page_table_t::map(uint64_t virt_addr, uint64_t phys_addr, uint64_t size, ui
 }
 
 void page_table_t::unmap(uint64_t virt_addr, uint64_t size) {
+    assert_msg((virt_addr % 0x1000) == 0, "Virtual address must be page aligned");
+    assert_msg((size % 0x1000) == 0, "Size must be expressed in pages");
+
     lock_guard_t lock(vmm_lock);
 
     for (auto i = 0ul; i < size / 4096; i++) {

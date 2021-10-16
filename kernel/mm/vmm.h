@@ -40,6 +40,27 @@ public:
     const page_table_entry_t &get(uint64_t index) const { return m_entries[index]; }
 };
 
+class temporary_mapping_t {
+private:
+    page_table_t *m_pml4;
+
+    uint64_t m_virt_addr;
+    uint64_t m_phys_addr;
+    uint64_t m_size;
+
+public:
+    inline temporary_mapping_t(page_table_t *page_table, uint64_t virt_addr, uint64_t phys_addr, uint64_t size, uint64_t flags)
+        : m_pml4(page_table), m_virt_addr(virt_addr), m_phys_addr(phys_addr), m_size(size) //
+    {
+        page_table->map(virt_addr, phys_addr, size, flags);
+    }
+
+    inline temporary_mapping_t(page_table_t *page_table, uint64_t addr, uint64_t size, uint64_t flags)
+        : temporary_mapping_t(page_table, addr, addr, size, flags) {}
+
+    inline ~temporary_mapping_t() { m_pml4->unmap(m_virt_addr, m_size); }
+};
+
 namespace vmm {
 
 void init(stivale2_struct_pmrs_tag_t *pmrs);

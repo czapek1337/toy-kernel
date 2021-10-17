@@ -11,9 +11,10 @@
 #include "mm/vmm.h"
 #include "proc/sched.h"
 
-void kernel_init_thread() {
-    log_info("Entered kernel initialization thread");
+void kernel_idle_thread() {
+    log_info("Started the kernel idle task");
 
+    // Halt until the next interrupt comes in
     while (true) {
         arch::halt();
     }
@@ -50,7 +51,18 @@ void kernel_main(stivale2_struct_t *boot_info) {
     hpet::init();
 
     // Configure the local APIC
+    // Make sure interrupts are disabled until the scheduler is initialized
+    intr::retain();
     apic::init();
+
+    // Initialize the scheduler and kernel idle task
+    auto idle_stack = pmm::alloc(1);
+
+    task::init_sched();
+    task::register_task(task::create((uint64_t) kernel_idle_thread, phys_to_io(idle_stack + kib(1))));
+
+    // Start scheduling by enabling interrupts
+    intr::release();
 
     // Halt indefinitely - once we have a scheduler, it will take over from here
     while (true) {

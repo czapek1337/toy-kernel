@@ -166,8 +166,6 @@ void print_format_log(log_level_t level, const char *file, int line, const char 
     print_format_log_unlocked(level, file, line, format, args...);
 }
 
-void print_backtrace();
-
 } // namespace detail
 
 #define log_debug_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
@@ -177,10 +175,9 @@ void print_backtrace();
 #define log_fatal_unlocked(...)                                                                                                            \
     do {                                                                                                                                   \
         detail::print_format_log_unlocked(LOG_LEVEL_FATAL, __FILE__, __LINE__, __VA_ARGS__);                                               \
-        detail::print_backtrace();                                                                                                         \
         while (true)                                                                                                                       \
             arch::halt_forever();                                                                                                          \
-    } while (true)
+    } while (false)
 
 #define log_debug(...) detail::print_format_log(LOG_LEVEL_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
 #define log_info(...) detail::print_format_log(LOG_LEVEL_INFO, __FILE__, __LINE__, __VA_ARGS__)
@@ -191,7 +188,7 @@ void print_backtrace();
         detail::print_format_log(LOG_LEVEL_FATAL, __FILE__, __LINE__, __VA_ARGS__);                                                        \
         while (true)                                                                                                                       \
             arch::halt_forever();                                                                                                          \
-    } while (true)
+    } while (false)
 
 #define assert_msg(cond, ...)                                                                                                              \
     do {                                                                                                                                   \

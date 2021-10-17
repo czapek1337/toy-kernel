@@ -1,10 +1,15 @@
 #include "acpi.h"
+#include "../ds/vector.h"
 #include "../lib/addr.h"
 #include "../lib/log.h"
 #include "../mm/vmm.h"
 
+static vector_t<sdt_header_t *> tables;
+
 static void handle_table(sdt_header_t *header) {
     log_debug("Found ACPI table '{4}' at {#016x}", (const char *) &header->signature[0], header);
+
+    tables.push(header);
 }
 
 void acpi::init(stivale2_struct_rsdp_tag_t *rsdp) {
@@ -33,4 +38,15 @@ void acpi::init(stivale2_struct_rsdp_tag_t *rsdp) {
     } else {
         log_fatal("Unknown ACPI version, expected revision 0 or 2, got {}", rsdp_header->revision);
     }
+}
+
+sdt_header_t *acpi::find_table(const char *signature) {
+    for (auto i = 0; i < tables.size(); i++) {
+        auto table = tables[i];
+
+        if (__builtin_strncmp(table->signature, signature, 4) == 0)
+            return table;
+    }
+
+    return nullptr;
 }

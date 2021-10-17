@@ -42,4 +42,6 @@ namespace acpi {
 
 void init(stivale2_struct_rsdp_tag_t *rsdp);
 
-}
+sdt_header_t *find_table(const char *signature);
+
+} // namespace acpi

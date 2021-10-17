@@ -1,5 +1,6 @@
 #include "intr.h"
 #include "../arch/asm.h"
+#include "../arch/gdt.h"
 #include "../lib/log.h"
 #include "../proc/sched.h"
 #include "apic.h"
@@ -32,7 +33,8 @@ void intr::retain_enable() {
 }
 
 void intr::retain() {
-    assert_msg(retain_enabled, "retain() called when interrupt retaining was not enabled");
+    if (!retain_enabled)
+        return;
 
     arch::disable_interrupts();
 
@@ -40,7 +42,9 @@ void intr::retain() {
 }
 
 void intr::release() {
-    assert_msg(retain_enabled, "release() called when interrupt retaining was not enabled");
+    if (!retain_enabled)
+        return;
+
     assert_msg(retain_depth > 0, "release() called when interrupts were not retained");
 
     retain_depth--;
@@ -50,9 +54,12 @@ void intr::release() {
 }
 
 extern "C" void interrupt_handler(registers_t *regs) {
-    interrupt_retainer_t retainer;
+    intr::retain_disable();
 
     if (regs->isr_number < 32) {
+        if (regs->cs == (GDT_USER_CS64 | 3) /* Privilege level */)
+            log_info_unlocked("Interrupt came in from CPL3");
+
         log_fatal_unlocked("A CPU has raised an exception #{}", regs->isr_number);
     } else {
         if (regs->isr_number == 32) {
@@ -71,4 +78,6 @@ extern "C" void interrupt_handler(registers_t *regs) {
 
         apic::send_eoi();
     }
+
+    intr::retain_enable();
 }

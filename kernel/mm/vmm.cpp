@@ -21,7 +21,7 @@ static page_table_t *get_page_table(page_table_t *root, uint64_t index, bool cre
     __builtin_memset(pt, 0, sizeof(page_table_t));
 
     entry->set_address(pt_phys);
-    entry->set_flags(PAGE_TABLE_ENTRY_PRESENT | PAGE_TABLE_ENTRY_WRITE);
+    entry->set_flags(PAGE_TABLE_ENTRY_PRESENT | PAGE_TABLE_ENTRY_WRITE | PAGE_TABLE_ENTRY_USER);
 
     return pt;
 }
@@ -52,6 +52,22 @@ static void unmap_page(page_table_t *root, uint64_t virt_addr) {
     entry->set_flags(0);
 
     asm("invlpg (%0)" : : "r"(virt_addr));
+}
+
+static void destroy_pml(int level, page_table_t *root, uint64_t start, uint64_t end) {
+    if (level < 1)
+        return;
+
+    for (auto i = start; i < end; i++) {
+        auto next_pml = get_page_table(root, i, false);
+
+        if (!next_pml)
+            continue;
+
+        destroy_pml(level - 1, next_pml, 0, 512);
+    }
+
+    pmm::free(io_to_phys((uint64_t) root), 1);
 }
 
 void page_table_t::map(uint64_t virt_addr, uint64_t phys_addr, uint64_t size, uint64_t flags) {
@@ -108,7 +124,16 @@ void vmm::init(stivale2_struct_pmrs_tag_t *pmrs) {
 }
 
 void vmm::destroy_pml4(page_table_t *pml4) {
-    // TODO: Destroy the PML4
+    destroy_pml(4, pml4, 0, 255);
+}
+
+void vmm::switch_to(page_table_t *pml4) {
+    lock_guard_t _{vmm_lock};
+
+    uint64_t old_plm4;
+
+    asm volatile("mov %%cr3, %0" : "=r"(old_plm4));
+    asm volatile("mov %0, %%cr3" : : "r"(io_to_phys((uint64_t) pml4)));
 }
 
 page_table_t *vmm::create_pml4() {
@@ -120,19 +145,8 @@ page_table_t *vmm::create_pml4() {
     __builtin_memset(pt, 0, sizeof(page_table_t));
 
     for (auto i = 256; i < 512; i++) {
-        pt->get(i) = kernel_pml4->get(i);
+        pt->get(i) = vmm::kernel_pml4->get(i);
     }
 
     return pt;
-}
-
-page_table_t *vmm::switch_pml4(page_table_t *pml4) {
-    lock_guard_t _{vmm_lock};
-
-    uint64_t old_plm4;
-
-    asm volatile("mov %%cr3, %0" : "=r"(old_plm4));
-    asm volatile("mov %0, %%cr3" : : "r"(io_to_phys((uint64_t) pml4)));
-
-    return (page_table_t *) phys_to_io(old_plm4);
 }

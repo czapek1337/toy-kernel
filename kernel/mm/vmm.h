@@ -19,6 +19,7 @@ private:
     uint64_t m_value;
 
 public:
+    page_table_entry_t(const page_table_entry_t &other) : m_value(other.m_value) {}
     page_table_entry_t(uint64_t addr, uint64_t flags) : m_value(addr | flags) {}
 
     uint64_t get_address() const { return m_value & 0x000ffffffffff000; }
@@ -65,9 +66,9 @@ namespace vmm {
 
 void init(stivale2_struct_pmrs_tag_t *pmrs);
 void destroy_pml4(page_table_t *pml4);
+void switch_to(page_table_t *pml4);
 
 page_table_t *create_pml4();
-page_table_t *switch_pml4(page_table_t *pml4);
 
 inline page_table_t *kernel_pml4;
 

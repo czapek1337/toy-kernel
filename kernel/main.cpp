@@ -1,11 +1,23 @@
 #include "acpi/acpi.h"
+#include "acpi/hpet.h"
 #include "arch/gdt.h"
 #include "arch/idt.h"
 #include "boot/stivale2.h"
+#include "intr/apic.h"
+#include "lib/addr.h"
 #include "lib/log.h"
 #include "mm/heap.h"
 #include "mm/pmm.h"
 #include "mm/vmm.h"
+#include "proc/sched.h"
+
+void kernel_init_thread() {
+    log_info("Entered kernel initialization thread");
+
+    while (true) {
+        arch::halt();
+    }
+}
 
 void kernel_main(stivale2_struct_t *boot_info) {
     // Grab pointers to struct tags from the boot info
@@ -33,6 +45,12 @@ void kernel_main(stivale2_struct_t *boot_info) {
 
     // Scan the ACPI tables
     acpi::init(rsdp);
+
+    // Initialize the HPET timer
+    hpet::init();
+
+    // Configure the local APIC
+    apic::init();
 
     // Halt indefinitely - once we have a scheduler, it will take over from here
     while (true) {

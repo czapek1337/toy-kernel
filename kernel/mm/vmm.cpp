@@ -106,3 +106,33 @@ void vmm::init(stivale2_struct_pmrs_tag_t *pmrs) {
 
     log_info("Successfully switched to the new kernel page table");
 }
+
+void vmm::destroy_pml4(page_table_t *pml4) {
+    // TODO: Destroy the PML4
+}
+
+page_table_t *vmm::create_pml4() {
+    lock_guard_t lock(vmm_lock);
+
+    auto pt_phys = pmm::alloc(1);
+    auto pt = (page_table_t *) phys_to_io(pt_phys);
+
+    __builtin_memset(pt, 0, sizeof(page_table_t));
+
+    for (auto i = 256; i < 512; i++) {
+        pt->get(i) = kernel_pml4->get(i);
+    }
+
+    return pt;
+}
+
+page_table_t *vmm::switch_pml4(page_table_t *pml4) {
+    lock_guard_t _{vmm_lock};
+
+    uint64_t old_plm4;
+
+    asm volatile("mov %%cr3, %0" : "=r"(old_plm4));
+    asm volatile("mov %0, %%cr3" : : "r"(io_to_phys((uint64_t) pml4)));
+
+    return (page_table_t *) phys_to_io(old_plm4);
+}

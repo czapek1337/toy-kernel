@@ -64,6 +64,10 @@ public:
 namespace vmm {
 
 void init(stivale2_struct_pmrs_tag_t *pmrs);
+void destroy_pml4(page_table_t *pml4);
+
+page_table_t *create_pml4();
+page_table_t *switch_pml4(page_table_t *pml4);
 
 inline page_table_t *kernel_pml4;
 

@@ -1,6 +1,6 @@
 # toy-kernel
 
-a toy kernel (and maybe an os in the future) that i am working on in my free time
+a unix inspired, non posix compliant micro kernel (more of a monolithic kernel for now though) that i am working on in my spare time
 
 ## prerequisites
 

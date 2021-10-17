@@ -7,7 +7,7 @@
 namespace task {
 
 void init_sched();
-void register_task(task_t *task);
+void create_task(uint64_t entry, uint64_t stack_size, bool is_user);
 
 task_t *reschedule();
 task_t *get_current_task();

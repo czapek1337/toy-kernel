@@ -17,9 +17,3 @@ struct task_t {
     void save(registers_t *regs);
     void load(registers_t *regs);
 };
-
-namespace task {
-
-task_t *create(uint64_t entry, uint64_t stack);
-
-}

@@ -17,10 +17,21 @@ void task::register_task(task_t *task) {
     tasks.push(task);
 }
 
-void task::reschedule() {
+task_t *task::reschedule() {
+    // TODO: A more sophisticated rescheduling logic lol
+
+    auto current_task = get_current_task();
+
+    if (current_task && ++current_task->ticks_since_schedule < 3)
+        return current_task;
+
     current_task_idx = (current_task_idx + 1) % tasks.size();
 
-    // TODO: A more sophisticated rescheduling logic lol
+    auto new_task = get_current_task();
+
+    new_task->ticks_since_schedule = 0;
+
+    return new_task;
 }
 
 task_t *task::get_current_task() {

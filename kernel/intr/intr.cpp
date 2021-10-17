@@ -55,26 +55,20 @@ extern "C" void interrupt_handler(registers_t *regs) {
     if (regs->isr_number < 32) {
         log_fatal_unlocked("A CPU has raised an exception #{}", regs->isr_number);
     } else {
-        apic::send_eoi();
-
         if (regs->isr_number == 32) {
             auto current = task::get_current_task();
+            auto next = task::reschedule();
 
-            if (current) {
-                if (++current->ticks_since_schedule < 3)
-                    return;
+            if (current != next) {
+                if (current)
+                    current->save(regs);
 
-                current->save(regs);
-            }
-
-            task::reschedule();
-
-            if (auto new_task = task::get_current_task()) {
-                new_task->ticks_since_schedule = 0;
-                new_task->load(regs);
+                next->load(regs);
             }
         } else {
             log_info_unlocked("Received an interrupt request #{}", regs->isr_number);
         }
+
+        apic::send_eoi();
     }
 }

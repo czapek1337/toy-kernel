@@ -8,8 +8,8 @@ namespace task {
 
 void init_sched();
 void register_task(task_t *task);
-void reschedule();
 
+task_t *reschedule();
 task_t *get_current_task();
 
 } // namespace task

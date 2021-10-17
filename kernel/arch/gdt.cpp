@@ -1,6 +1,8 @@
 #include "gdt.h"
 #include "../ds/lock.h"
+#include "../lib/addr.h"
 #include "../lib/log.h"
+#include "../mm/pmm.h"
 
 #define ENTRY_INDEX(entry) (entry / 8)
 
@@ -35,6 +37,9 @@ void arch::init_tss() {
     lock_guard_t lock(gdt_lock);
 
     __builtin_memset(&tss, 0, sizeof(tss));
+
+    tss.rsp[0] = phys_to_io(pmm::alloc(2) + kib(8));
+    tss.ist[0] = phys_to_io(pmm::alloc(2) + kib(8));
 
     gdt.tss_entry = tss_entry_t((uint64_t) &tss);
 

@@ -30,10 +30,9 @@ void kernel_main(stivale2_struct_t *boot_info) {
     if (!rsdp)
         log_fatal("Cannot proceed without a valid RSDP tag");
 
-    // Set up necessary x86_64 structures like GDT, TSS and an IDT
+    // Set up necessary x86_64 structures like GDT and an IDT
     // That will let us handle interrupts (and exceptions) from external devices
     arch::init_gdt();
-    arch::init_tss();
     arch::init_idt();
 
     // Initialize both virtual and physical memory managers
@@ -44,22 +43,26 @@ void kernel_main(stivale2_struct_t *boot_info) {
     // Initialize heap for dynamic memory allocation
     heap::init();
 
+    // Initialize the TSS
+    arch::init_tss();
+
     // Scan the ACPI tables
     acpi::init(rsdp);
 
     // Initialize the HPET timer
     hpet::init();
 
-    // Configure the local APIC
     // Make sure interrupts are disabled until the scheduler is initialized
     intr::retain();
+
+    // Configure the local APIC
     apic::init();
 
     // Initialize the scheduler and kernel idle task
-    auto idle_stack = pmm::alloc(1);
-
     task::init_sched();
-    task::register_task(task::create((uint64_t) kernel_idle_thread, phys_to_io(idle_stack + kib(1))));
+
+    task::create_task((uint64_t) kernel_idle_thread, kib(1), false);
+    // task::create_task((uint64_t) test_user_task, kib(1), true);
 
     // Start scheduling by enabling interrupts
     intr::release();

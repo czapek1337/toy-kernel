@@ -6,12 +6,12 @@
 static uint64_t hpet_base;
 static uint64_t hpet_clock;
 
-static void hpet_write(uint64_t offset, uint64_t value) {
-    *(volatile uint64_t *) (hpet_base + offset) = value;
+inline static uint64_t hpet_read(uint64_t reg) {
+    return arch::mmio_inq(hpet_base + reg);
 }
 
-static uint64_t hpet_read(uint64_t offset) {
-    return *(volatile uint64_t *) (hpet_base + offset);
+inline static void hpet_write(uint64_t reg, uint64_t val) {
+    arch::mmio_outq(hpet_base + reg, val);
 }
 
 void hpet::init() {

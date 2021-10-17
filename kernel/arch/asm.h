@@ -8,6 +8,9 @@ void pause();
 void halt();
 void halt_forever();
 
+void disable_interrupts();
+void enable_interrupts();
+
 void io_outb(uint16_t port, uint8_t value);
 void io_outw(uint16_t port, uint16_t value);
 void io_outd(uint16_t port, uint32_t value);

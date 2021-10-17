@@ -2,7 +2,11 @@
 
 #include <stdint.h>
 
-struct interrupt_frame_t {
+enum cpu_flags_t {
+    CPU_FLAGS_INTERRUPT = 1 << 9,
+};
+
+struct registers_t {
     uint64_t r15;
     uint64_t r14;
     uint64_t r13;

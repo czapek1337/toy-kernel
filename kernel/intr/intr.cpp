@@ -1,5 +1,8 @@
 #include "intr.h"
+#include "../arch/asm.h"
 #include "../lib/log.h"
+#include "../proc/sched.h"
+#include "apic.h"
 
 static bool retain_enabled = true;
 
@@ -31,7 +34,7 @@ void intr::retain_enable() {
 void intr::retain() {
     assert_msg(retain_enabled, "retain() called when interrupt retaining was not enabled");
 
-    asm("cli");
+    arch::disable_interrupts();
 
     retain_depth++;
 }
@@ -43,17 +46,35 @@ void intr::release() {
     retain_depth--;
 
     if (retain_depth == 0)
-        asm("sti");
+        arch::enable_interrupts();
 }
 
-extern "C" void interrupt_handler(interrupt_frame_t *regs) {
-    intr::retain_disable();
+extern "C" void interrupt_handler(registers_t *regs) {
+    interrupt_retainer_t retainer;
 
     if (regs->isr_number < 32) {
         log_fatal_unlocked("A CPU has raised an exception #{}", regs->isr_number);
     } else {
-        log_info_unlocked("Received an interrupt request #{}", regs->isr_number);
-    }
+        apic::send_eoi();
 
-    intr::retain_enable();
+        if (regs->isr_number == 32) {
+            auto current = task::get_current_task();
+
+            if (current) {
+                if (++current->ticks_since_schedule < 3)
+                    return;
+
+                current->save(regs);
+            }
+
+            task::reschedule();
+
+            if (auto new_task = task::get_current_task()) {
+                new_task->ticks_since_schedule = 0;
+                new_task->load(regs);
+            }
+        } else {
+            log_info_unlocked("Received an interrupt request #{}", regs->isr_number);
+        }
+    }
 }

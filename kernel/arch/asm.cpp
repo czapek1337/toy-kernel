@@ -13,6 +13,14 @@ void arch::halt_forever() {
     asm("hlt");
 }
 
+void arch::disable_interrupts() {
+    asm("cli");
+}
+
+void arch::enable_interrupts() {
+    asm("sti");
+}
+
 void arch::io_outb(uint16_t port, uint8_t value) {
     asm("out %0, %1" : : "a"(value), "d"(port));
 }

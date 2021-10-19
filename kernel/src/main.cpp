@@ -1,5 +1,6 @@
 #include "acpi/acpi.h"
 #include "acpi/hpet.h"
+#include "arch/cpu.h"
 #include "arch/gdt.h"
 #include "arch/idt.h"
 #include "boot/stivale2.h"
@@ -13,15 +14,6 @@
 #include "proc/sched.h"
 #include "proc/syscall.h"
 
-void kernel_idle_thread() {
-    log_info("Started the kernel idle task");
-
-    // Halt until the next interrupt comes in
-    while (true) {
-        arch::halt();
-    }
-}
-
 void kernel_main(stivale2_struct_t *boot_info) {
     // Grab pointers to struct tags from the boot info
     auto mmap = (stivale2_struct_mmap_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_MMAP_TAG);
@@ -29,59 +21,42 @@ void kernel_main(stivale2_struct_t *boot_info) {
     auto rsdp = (stivale2_struct_rsdp_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_RSDP_TAG);
     auto modules = (stivale2_struct_modules_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_MODULES_TAG);
 
-    // Make sure we have a valid RSDP tag
-    if (!rsdp)
-        log_fatal("Cannot proceed without a valid RSDP tag");
-
-    // Set up necessary x86_64 structures like GDT and an IDT
-    // That will let us handle interrupts (and exceptions) from external devices
-    arch::init_gdt();
-    arch::init_idt();
-
-    // Initialize both virtual and physical memory managers
-    // This will let us allocate and map physical memory for the kernel
-    pmm::init(mmap);
-    vmm::init(pmrs);
-
-    // Initialize heap for dynamic memory allocation
-    heap::init();
-
-    // Initialize the TSS
-    arch::init_tss();
-
-    // Scan the ACPI tables
-    acpi::init(rsdp);
-
-    // Initialize the HPET timer
-    hpet::init();
+    // Initialize the per-CPU structures as early as possible
+    arch::init_bsp();
 
     // Make sure interrupts are disabled until the scheduler is initialized
     intr::retain();
 
-    // Configure the local APIC
-    apic::init();
+    // Make sure we have a valid RSDP tag
+    if (!rsdp)
+        log_fatal("Cannot proceed without a valid RSDP tag");
 
-    // Configure the syscall interface
-    syscall::init();
+    arch::init_gdt(); // Set up necessary x86_64 structures like GDT and an IDT
+    arch::init_idt(); // That will let us handle interrupts from external devices and CPU exceptions
 
-    // Initialize and test the VFS
-    vfs::init();
+    pmm::init(mmap); // Initialize virtual and physical memory managers
+    vmm::init(pmrs); // This will let us allocate and map physical memory
 
-    // Initialize the scheduler and kernel idle task
-    task::init_sched();
-    task::create_task("idle", (uint64_t) kernel_idle_thread, kib(4), false);
+    heap::init();       // Initialize heap for dynamic memory allocation
+    arch::init_tss();   // Initialize the TSS
+    acpi::init(rsdp);   // Scan the ACPI tables
+    hpet::init();       // Initialize the HPET timer
+    apic::init();       // Configure the local APIC
+    syscall::init();    // Configure the syscall interface
+    vfs::init();        // Initialize and test the VFS
+    task::init_sched(); // Initialize the scheduler and kernel idle task
 
     // Create new user tasks from passed in modules
-    // for (auto i = 0; i < modules->count; i++) {
-    //     auto module = &modules->modules[i];
+    for (auto i = 0; i < modules->count; i++) {
+        auto module = &modules->modules[i];
 
-    //     task::create_task_from_elf(module->name, (elf64_t *) module->base, kib(4), true);
-    // }
+        task::create_task_from_elf(module->name, (elf64_t *) module->base, kib(4), true);
+    }
 
     // Start scheduling by enabling interrupts
     intr::release();
 
-    // Halt indefinitely - once we have a scheduler, it will take over from here
+    // Halt indefinitely, the scheduler will take over from here
     while (true) {
         arch::halt();
     }

@@ -3,11 +3,11 @@
 #include "../lib/addr.h"
 #include "../lib/log.h"
 #include "../mm/pmm.h"
+#include "cpu.h"
 
 #define ENTRY_INDEX(entry) (entry / 8)
 
 static lock_t gdt_lock;
-static tss_t tss;
 static gdt_t gdt;
 
 extern "C" void update_gdt(gdt_descriptor_t *desc, uint16_t code_selector, uint16_t data_selector);
@@ -36,14 +36,11 @@ void arch::init_gdt() {
 void arch::init_tss() {
     lock_guard_t lock(gdt_lock);
 
-    __builtin_memset(&tss, 0, sizeof(tss));
+    auto current_cpu = get_current_cpu();
 
-    tss.rsp[0] = phys_to_io(pmm::alloc(2) + kib(8));
-    tss.ist[0] = phys_to_io(pmm::alloc(2) + kib(8));
-
-    gdt.tss_entry = tss_entry_t((uint64_t) &tss);
+    gdt.tss_entry = tss_entry_t((uint64_t) &current_cpu->tss);
 
     update_tss(GDT_TSS);
 
-    log_info("Successfully loaded the TSS");
+    log_info("Successfully loaded the TSS for CPU #{}", current_cpu->ap_id);
 }

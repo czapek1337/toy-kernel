@@ -1,5 +1,6 @@
 #include "intr.h"
 #include "../arch/asm.h"
+#include "../arch/cpu.h"
 #include "../arch/gdt.h"
 #include "../lib/log.h"
 #include "../proc/sched.h"
@@ -40,10 +41,6 @@ static constexpr const char *exception_messages[] = {
     "Reserved",
 };
 
-static bool retain_enabled = true;
-
-static uint64_t retain_depth;
-
 interrupt_retainer_t::interrupt_retainer_t() {
     intr::retain();
 }
@@ -53,38 +50,46 @@ interrupt_retainer_t::~interrupt_retainer_t() {
 }
 
 void intr::retain_disable() {
-    assert_msg(retain_enabled, "retain_disable() called when interrupt retaining was not enabled");
+    auto current_cpu = arch::get_current_cpu();
 
-    if (retain_depth > 0)
-        log_warn("retain_disable() called when interrupts were retained (retain depth is {})", retain_depth);
+    assert_msg(current_cpu->retain_enable, "retain_disable() called when interrupt retaining was not enabled");
 
-    retain_enabled = false;
+    if (current_cpu->retain_depth > 0)
+        log_warn("retain_disable() called when interrupts were retained (retain depth is {})", current_cpu->retain_depth);
+
+    current_cpu->retain_enable = false;
 }
 
 void intr::retain_enable() {
-    assert_msg(!retain_enabled, "retain_enable() called when interrupt retaining was already enabled");
+    auto current_cpu = arch::get_current_cpu();
 
-    retain_enabled = true;
+    assert_msg(!current_cpu->retain_enable, "retain_enable() called when interrupt retaining was already enabled");
+
+    current_cpu->retain_enable = true;
 }
 
 void intr::retain() {
-    if (!retain_enabled)
+    auto current_cpu = arch::get_current_cpu();
+
+    if (!current_cpu->retain_enable)
         return;
 
     arch::disable_interrupts();
 
-    retain_depth++;
+    current_cpu->retain_depth++;
 }
 
 void intr::release() {
-    if (!retain_enabled)
+    auto current_cpu = arch::get_current_cpu();
+
+    if (!current_cpu->retain_enable)
         return;
 
-    assert_msg(retain_depth > 0, "release() called when interrupts were not retained");
+    assert_msg(current_cpu->retain_depth > 0, "release() called when interrupts were not retained");
 
-    retain_depth--;
+    current_cpu->retain_depth--;
 
-    if (retain_depth == 0)
+    if (current_cpu->retain_depth == 0)
         arch::enable_interrupts();
 }
 
@@ -143,14 +148,7 @@ extern "C" void interrupt_handler(registers_t *regs) {
     } else {
         if (regs->isr_number == 32) {
             auto current = task::get_current_task();
-            auto next = task::reschedule();
-
-            if (current != next) {
-                if (current)
-                    current->save(regs);
-
-                next->load(regs);
-            }
+            auto next = task::reschedule(regs);
         } else {
             log_info_unlocked("Received an interrupt request #{}", regs->isr_number);
         }

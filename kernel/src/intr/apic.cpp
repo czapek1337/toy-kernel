@@ -5,7 +5,7 @@
 #include "../lib/addr.h"
 #include "../lib/log.h"
 
-static uint64_t apic_base_addr;
+static uint64_t apic_base_addr = 0;
 
 inline static uint32_t apic_read(uint32_t reg) {
     return arch::mmio_ind(apic_base_addr + reg);
@@ -28,8 +28,6 @@ void apic::init() {
         log_info("APIC base address is {#016x}", apic_base_addr);
     }
 
-    apic_base_addr = phys_to_io(apic_base_addr);
-
     // enable APIC by settings the SPIV register
     apic_write(LAPIC_REG_SPURIOUS, 0x1ff);
 
@@ -50,4 +48,16 @@ void apic::init() {
 
 void apic::send_eoi() {
     apic_write(LAPIC_REG_EOI, 0);
+}
+
+void apic::send_ipi(uint64_t cpu_id, uint64_t interrupt_id) {
+    apic_write(LAPIC_REG_ICR1, cpu_id << 24);
+    apic_write(LAPIC_REG_ICR0, interrupt_id | 1 << 14);
+}
+
+uint64_t apic::get_current_cpu() {
+    if (apic_base_addr == 0)
+        return 0;
+
+    return apic_read(LAPIC_CPU_ID);
 }

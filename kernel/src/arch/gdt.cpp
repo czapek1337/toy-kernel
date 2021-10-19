@@ -23,8 +23,8 @@ void arch::init_gdt() {
     gdt.entries[ENTRY_INDEX(GDT_KERNEL_DS64)] = gdt_entry_t(0b10010110, 0b00100000);
 
     gdt.entries[ENTRY_INDEX(GDT_USER_BASE)] = gdt_entry_t(0, 0);
-    gdt.entries[ENTRY_INDEX(GDT_USER_CS64)] = gdt_entry_t(0b11111000, 0b00100000);
     gdt.entries[ENTRY_INDEX(GDT_USER_DS64)] = gdt_entry_t(0b11110110, 0b00100000);
+    gdt.entries[ENTRY_INDEX(GDT_USER_CS64)] = gdt_entry_t(0b11111000, 0b00100000);
 
     gdt.descriptor = gdt_descriptor_t((uint64_t) &gdt, sizeof(gdt.entries) + sizeof(gdt.tss_entry) - 1);
 

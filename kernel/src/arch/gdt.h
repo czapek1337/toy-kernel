@@ -7,8 +7,8 @@ enum gdt_selector_t : uint16_t {
     GDT_KERNEL_CS64 = 0x08,
     GDT_KERNEL_DS64 = 0x10,
     GDT_USER_BASE = 0x18,
-    GDT_USER_CS64 = 0x20,
-    GDT_USER_DS64 = 0x28,
+    GDT_USER_DS64 = 0x20,
+    GDT_USER_CS64 = 0x28,
     GDT_TSS = 0x30,
 };
 

@@ -1,5 +1,9 @@
 #include "log.h"
 
+extern "C" void atexit() {
+    assert(false);
+}
+
 extern "C" void __cxa_atexit() {
     assert(false);
 }

@@ -50,6 +50,19 @@ public:
         m_count--;
     }
 
+    void remove(T value) {
+        for (auto i = 0; i < m_count; i++) {
+            if (m_values[i] == value) {
+                for (auto j = i; j < m_count - 1; j++)
+                    m_values[j] = m_values[j + 1];
+
+                m_count--;
+
+                break;
+            }
+        }
+    }
+
     T &operator[](uint64_t index) { return m_values[index]; }
     T &at(uint64_t index) { return m_values[index]; }
 

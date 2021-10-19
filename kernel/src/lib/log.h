@@ -1,9 +1,14 @@
 #pragma once
 
+#ifndef __FILE_NAME__
+#define __FILE_NAME__ "unknown"
+#endif
+
 #include <stdint.h>
 
 #include "../arch/asm.h"
 #include "../ds/lock.h"
+#include "../proc/sched.h"
 
 enum log_level_t : uint8_t {
     LOG_LEVEL_DEBUG,
@@ -153,7 +158,9 @@ void print_format(const char *format, Args &&...args) {
 
 template <typename... Args>
 void print_format_log_unlocked(log_level_t level, const char *file, int line, const char *format, Args &&...args) {
-    print_format("\e[1m[{}]\e[m [{}:{}] ", level, file, line);
+    auto current_proc = task::get_current_task();
+
+    print_format("{}: {}: {}:{}: ", current_proc ? current_proc->name : "kernel", level, file, line);
     print_format(format, args...);
 
     format_arg('\n', {});
@@ -168,24 +175,24 @@ void print_format_log(log_level_t level, const char *file, int line, const char 
 
 } // namespace detail
 
-#define log_debug_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
-#define log_info_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_INFO, __FILE__, __LINE__, __VA_ARGS__)
-#define log_warn_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_WARN, __FILE__, __LINE__, __VA_ARGS__)
-#define log_error_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+#define log_debug_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_DEBUG, __FILE_NAME__, __LINE__, __VA_ARGS__)
+#define log_info_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_INFO, __FILE_NAME__, __LINE__, __VA_ARGS__)
+#define log_warn_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_WARN, __FILE_NAME__, __LINE__, __VA_ARGS__)
+#define log_error_unlocked(...) detail::print_format_log_unlocked(LOG_LEVEL_ERROR, __FILE_NAME__, __LINE__, __VA_ARGS__)
 #define log_fatal_unlocked(...)                                                                                                            \
     do {                                                                                                                                   \
-        detail::print_format_log_unlocked(LOG_LEVEL_FATAL, __FILE__, __LINE__, __VA_ARGS__);                                               \
+        detail::print_format_log_unlocked(LOG_LEVEL_FATAL, __FILE_NAME__, __LINE__, __VA_ARGS__);                                          \
         while (true)                                                                                                                       \
             arch::halt_forever();                                                                                                          \
     } while (false)
 
-#define log_debug(...) detail::print_format_log(LOG_LEVEL_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
-#define log_info(...) detail::print_format_log(LOG_LEVEL_INFO, __FILE__, __LINE__, __VA_ARGS__)
-#define log_warn(...) detail::print_format_log(LOG_LEVEL_WARN, __FILE__, __LINE__, __VA_ARGS__)
-#define log_error(...) detail::print_format_log(LOG_LEVEL_ERROR, __FILE__, __LINE__, __VA_ARGS__)
+#define log_debug(...) detail::print_format_log(LOG_LEVEL_DEBUG, __FILE_NAME__, __LINE__, __VA_ARGS__)
+#define log_info(...) detail::print_format_log(LOG_LEVEL_INFO, __FILE_NAME__, __LINE__, __VA_ARGS__)
+#define log_warn(...) detail::print_format_log(LOG_LEVEL_WARN, __FILE_NAME__, __LINE__, __VA_ARGS__)
+#define log_error(...) detail::print_format_log(LOG_LEVEL_ERROR, __FILE_NAME__, __LINE__, __VA_ARGS__)
 #define log_fatal(...)                                                                                                                     \
     do {                                                                                                                                   \
-        detail::print_format_log(LOG_LEVEL_FATAL, __FILE__, __LINE__, __VA_ARGS__);                                                        \
+        detail::print_format_log(LOG_LEVEL_FATAL, __FILE_NAME__, __LINE__, __VA_ARGS__);                                                   \
         while (true)                                                                                                                       \
             arch::halt_forever();                                                                                                          \
     } while (false)

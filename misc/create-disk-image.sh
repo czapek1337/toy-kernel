@@ -2,11 +2,11 @@
 
 CMD=$1
 
-LIMINE_DIR=$(pwd)/limine
-BUILD_DIR=$(pwd)/build
-MISC_DIR=$(pwd)/misc
+BUILD_DIR=$(pwd)
+LIMINE_DIR=$(pwd)/../limine
+MISC_DIR=$(pwd)/../misc
 
-DISK_IMAGE=$BUILD_DIR/disk.img
+DISK_IMAGE=$BUILD_DIR/disk-$1.img
 DISK_ROOT=$BUILD_DIR/disk_root
 LOOPBACK=$BUILD_DIR/loopback_dev
 
@@ -33,7 +33,8 @@ sudo mkfs.fat -F 32 `cat $LOOPBACK`p1 >/dev/null 2>&1
 sudo mount `cat $LOOPBACK`p1 $DISK_ROOT >/dev/null 2>&1
 
 # Copy the files needed to boot over
-sudo cp $BUILD_DIR/kernel.elf $DISK_ROOT
+sudo cp $BUILD_DIR/kernel/kernel $DISK_ROOT/kernel.elf
+sudo cp $BUILD_DIR/user/hello/hello $DISK_ROOT/hello.elf
 sudo cp $MISC_DIR/limine.cfg $DISK_ROOT
 
 if [ "$CMD" = "bios" ]; then

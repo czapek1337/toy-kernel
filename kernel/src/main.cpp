@@ -10,6 +10,7 @@
 #include "mm/pmm.h"
 #include "mm/vmm.h"
 #include "proc/sched.h"
+#include "proc/syscall.h"
 
 void kernel_idle_thread() {
     log_info("Started the kernel idle task");
@@ -25,6 +26,7 @@ void kernel_main(stivale2_struct_t *boot_info) {
     auto mmap = (stivale2_struct_mmap_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_MMAP_TAG);
     auto pmrs = (stivale2_struct_pmrs_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_PMRS_TAG);
     auto rsdp = (stivale2_struct_rsdp_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_RSDP_TAG);
+    auto modules = (stivale2_struct_modules_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_MODULES_TAG);
 
     // Make sure we have a valid RSDP tag
     if (!rsdp)
@@ -58,11 +60,19 @@ void kernel_main(stivale2_struct_t *boot_info) {
     // Configure the local APIC
     apic::init();
 
+    // Configure the syscall interface
+    syscall::init();
+
     // Initialize the scheduler and kernel idle task
     task::init_sched();
+    task::create_task("idle", (uint64_t) kernel_idle_thread, kib(4), false);
 
-    task::create_task((uint64_t) kernel_idle_thread, kib(1), false);
-    // task::create_task((uint64_t) test_user_task, kib(1), true);
+    // Create new user tasks from passed in modules
+    for (auto i = 0; i < modules->count; i++) {
+        auto module = &modules->modules[i];
+
+        task::create_task_from_elf(module->name, (elf64_t *) module->base, kib(4), true);
+    }
 
     // Start scheduling by enabling interrupts
     intr::release();

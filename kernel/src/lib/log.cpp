@@ -175,11 +175,11 @@ const char *format_options_t::parse(const char *options) {
 template <>
 void formatter_t<log_level_t>::format(const log_level_t &value, const format_options_t &options) {
     switch (value) {
-    case LOG_LEVEL_DEBUG: detail::format_arg("DEBUG", options); break;
-    case LOG_LEVEL_INFO: detail::format_arg("INFO", options); break;
-    case LOG_LEVEL_WARN: detail::format_arg("WARN", options); break;
-    case LOG_LEVEL_ERROR: detail::format_arg("ERROR", options); break;
-    case LOG_LEVEL_FATAL: detail::format_arg("FATAL", options); break;
+    case LOG_LEVEL_DEBUG: detail::format_arg("debug", options); break;
+    case LOG_LEVEL_INFO: detail::format_arg("info", options); break;
+    case LOG_LEVEL_WARN: detail::format_arg("warn", options); break;
+    case LOG_LEVEL_ERROR: detail::format_arg("error", options); break;
+    case LOG_LEVEL_FATAL: detail::format_arg("fatal", options); break;
     }
 }
 

@@ -1,7 +1,7 @@
 {
   "configurations": [
     {
-      "name": "nucon-kernel",
+      "name": "toy-kernel",
       "intelliSenseMode": "linux-gcc-x64",
       "compilerPath": "/usr/bin/clang-12",
       "cppStandard": "gnu++20",

@@ -19,9 +19,9 @@ void apic::init() {
     auto madt = (madt_t *) acpi::find_table("APIC");
 
     if (!madt) {
-        apic_base_addr = 0xfec00000;
+        apic_base_addr = arch::read_msr(MSR_APIC);
 
-        log_warn("MADT table is not present on the system, defaulting APIC base to {#016x}", apic_base_addr);
+        log_warn("MADT table is not present on the system, defaulting to APIC MSR ({#016x})", apic_base_addr);
     } else {
         apic_base_addr = madt->lapic_address;
 

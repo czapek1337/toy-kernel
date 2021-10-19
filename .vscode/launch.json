@@ -4,13 +4,13 @@
       "type": "by-gdb",
       "request": "launch",
       "name": "Attach to QEMU",
-      "program": "build/kernel.elf",
+      "program": "build/kernel/kernel",
       "cwd": "${workspaceRoot}",
       "remote": {
         "enabled": true,
         "address": ":1234",
         "mode": "remote",
-        "execfile": "build/kernel.elf"
+        "execfile": "build/kernel/kernel"
       }
     }
   ]

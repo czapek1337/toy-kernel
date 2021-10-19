@@ -1,6 +1,7 @@
 #include <system/syscalls.h>
 
 #include "../arch/asm.h"
+#include "../arch/cpu.h"
 #include "../arch/gdt.h"
 #include "../lib/log.h"
 #include "sched.h"
@@ -38,7 +39,7 @@ extern "C" uint64_t syscall_handler(registers_t *regs) {
     } else if (regs->rdi == SYSCALL_EXIT) {
         task::get_current_task()->kill(regs->rbx);
     } else if (regs->rdi == SYSCALL_YIELD) {
-        log_error("Yield syscall hasn't been implemented yet");
+        task::reschedule(regs);
     } else {
         log_error("Unknown syscall with ID {#016x}", regs->rdi);
     }

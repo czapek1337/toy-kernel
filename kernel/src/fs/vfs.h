@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include "../boot/stivale2.h"
 #include "../ds/string.h"
 #include "../ds/vector.h"
 
@@ -29,15 +30,15 @@ struct vfs_node_t {
 
 namespace vfs {
 
-void init();
+void init(stivale2_struct_modules_tag_t *modules);
 
 vfs_node_t *get(vfs_node_t *parent, const string_t &path);
-vfs_node_t *append_child(vfs_node_t *parent, const string_t &name);
-vfs_node_t *mount(vfs_file_system_t *fs, vfs_node_t *parent, const string_t &name);
 
-void remove_child(vfs_node_t *parent, const string_t &name);
+void mount(vfs_file_system_t *fs, vfs_node_t *parent, vfs_node_t *node);
+void append_child(vfs_node_t *parent, vfs_node_t *node);
+void remove_child(vfs_node_t *parent, vfs_node_t *node);
 
-uint64_t open(const string_t &path);
+uint64_t open(const string_t &fs_path, const string_t &path);
 uint64_t close(uint64_t fd);
 uint64_t read(uint64_t fd, uint8_t *buffer, uint64_t size);
 uint64_t write(uint64_t fd, const uint8_t *buffer, uint64_t size);

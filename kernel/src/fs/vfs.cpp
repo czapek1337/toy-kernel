@@ -1,6 +1,7 @@
 #include "vfs.h"
 #include "../lib/log.h"
 #include "dev_fs.h"
+#include "module_fs.h"
 
 static vfs_node_t *root_node;
 
@@ -28,15 +29,31 @@ static vector_t<string_t> split_path(const string_t &path) {
     return result;
 }
 
-void vfs::init() {
-    root_node = new vfs_node_t;
+static void iterate_node(vfs_node_t *node, int depth) {
+    char buffer[128];
 
-    mount(new dev_fs_t, nullptr, "/dev");
+    __builtin_memset(buffer, 0, sizeof(buffer));
+    __builtin_memset(buffer, '-', depth);
+
+    log_debug("{} {}", buffer, node->name);
+
+    for (auto i = 0; i < node->children.size(); i++) {
+        iterate_node(node->children[i], depth + 1);
+    }
+}
+
+void vfs::init(stivale2_struct_modules_tag_t *modules) {
+    root_node = new vfs_node_t;
+    root_node->name = "/";
+
+    new dev_fs_t(new vfs_node_t);
+    new module_fs_t(new vfs_node_t, modules);
+
+    iterate_node(root_node, 1);
 }
 
 vfs_node_t *vfs::get(vfs_node_t *parent, const string_t &path) {
-    if (!parent)
-        parent = root_node;
+    parent = parent ?: root_node;
 
     auto components = split_path(path);
 
@@ -66,37 +83,74 @@ vfs_node_t *vfs::get(vfs_node_t *parent, const string_t &path) {
     return parent;
 }
 
-vfs_node_t *vfs::append_child(vfs_node_t *parent, const string_t &name) {
-    if (!parent)
-        parent = root_node;
+void vfs::mount(vfs_file_system_t *fs, vfs_node_t *parent, vfs_node_t *node) {
+    append_child(parent ?: root_node, node);
 
-    return nullptr;
+    node->file_system = fs;
 }
 
-vfs_node_t *vfs::mount(vfs_file_system_t *fs, vfs_node_t *parent, const string_t &name) {
-    if (!parent)
-        parent = root_node;
+void vfs::append_child(vfs_node_t *parent, vfs_node_t *node) {
+    parent = parent ?: root_node;
 
-    return nullptr;
+    node->parent = parent;
+    node->file_system = parent->file_system;
+
+    parent->children.push(node);
 }
 
-void vfs::remove_child(vfs_node_t *parent, const string_t &name) {
-    if (!parent)
-        parent = root_node;
+void vfs::remove_child(vfs_node_t *parent, vfs_node_t *node) {
+    parent = parent ?: root_node;
+
+    for (auto i = 0; i < parent->children.size(); i++) {
+        auto child = parent->children[i];
+
+        if (child != node)
+            continue;
+
+        parent->children.remove(child);
+
+        delete child;
+
+        return;
+    }
+
+    log_warn("Could not delete a VFS node '{}' in parent '{}'", node->name, parent->name);
 }
 
-uint64_t vfs::open(const string_t &path) {
-    return -1;
+uint64_t vfs::open(const string_t &fs_path, const string_t &path) {
+    auto parent = get(nullptr, fs_path);
+
+    if (!parent)
+        return -1;
+
+    auto node = get(parent, path);
+
+    if (!node)
+        return -1;
+
+    auto file = new vfs_opened_file_t;
+
+    file->seek = 0;
+    file->file_size = 0;
+    file->node = node;
+
+    return node->file_system->open(file, path);
 }
 
 uint64_t vfs::close(uint64_t fd) {
+    // TODO: Implement closing files by file descriptor
+
     return -1;
 }
 
 uint64_t vfs::read(uint64_t fd, uint8_t *buffer, uint64_t size) {
+    // TODO: Implement reading from files by file descriptor
+
     return -1;
 }
 
 uint64_t vfs::write(uint64_t fd, const uint8_t *buffer, uint64_t size) {
+    // TODO: Implement writing to files by file descriptor
+
     return -1;
 }

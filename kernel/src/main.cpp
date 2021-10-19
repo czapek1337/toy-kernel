@@ -43,7 +43,7 @@ void kernel_main(stivale2_struct_t *boot_info) {
     hpet::init();       // Initialize the HPET timer
     apic::init();       // Configure the local APIC
     syscall::init();    // Configure the syscall interface
-    vfs::init();        // Initialize and test the VFS
+    vfs::init(modules); // Initialize and test the VFS
     task::init_sched(); // Initialize the scheduler and kernel idle task
 
     // Create new user tasks from passed in modules

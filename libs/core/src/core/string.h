@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+namespace core {
+
 class string_t {
 private:
     char *m_data;
@@ -34,3 +36,5 @@ public:
 
     const char *data() const;
 };
+
+} // namespace core

@@ -1,16 +1,17 @@
-#include "sched.h"
+#include <core/lock.h>
+#include <core/vector.h>
+
 #include "../arch/cpu.h"
 #include "../arch/gdt.h"
-#include "../ds/lock.h"
-#include "../ds/vector.h"
 #include "../lib/addr.h"
 #include "../lib/log.h"
 #include "../mm/heap.h"
 #include "../mm/pmm.h"
 #include "../mm/vmm.h"
+#include "sched.h"
 
-static lock_t scheduler_lock;
-static vector_t<task_t *> task_queue;
+static core::lock_t scheduler_lock;
+static core::vector_t<task_t *> task_queue;
 static task_t *idle_task;
 
 static void kernel_idle_task() {
@@ -77,7 +78,7 @@ static task_t *initialize_task(uint64_t entry, uint64_t stack_size, bool is_user
     return task;
 }
 
-static task_t *create_basic_task(const string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
+static task_t *create_basic_task(const core::string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
     auto task = initialize_task(entry, stack_size, is_user);
 
     task->exit_code = 0;
@@ -94,14 +95,14 @@ void task::init_sched() {
     idle_task = create_basic_task("idle", (uint64_t) kernel_idle_task, kib(4), false);
 }
 
-void task::create_task(const string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
-    lock_guard_t lock(scheduler_lock);
+void task::create_task(const core::string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
+    core::lock_guard_t lock(scheduler_lock);
 
     task_queue.push(create_basic_task(name, entry, stack_size, is_user));
 }
 
-void task::create_task_from_elf(const string_t &name, elf64_t *elf, uint64_t stack_size, bool is_user) {
-    lock_guard_t lock(scheduler_lock);
+void task::create_task_from_elf(const core::string_t &name, elf64_t *elf, uint64_t stack_size, bool is_user) {
+    core::lock_guard_t lock(scheduler_lock);
 
     auto task = create_basic_task(name, elf->entry, stack_size, is_user);
     auto phdrs = (elf64_phdr_t *) ((uint64_t) elf + elf->ph_off);
@@ -136,7 +137,7 @@ void task::create_task_from_elf(const string_t &name, elf64_t *elf, uint64_t sta
 }
 
 task_t *task::reschedule(registers_t *regs) {
-    lock_guard_t lock(scheduler_lock);
+    core::lock_guard_t lock(scheduler_lock);
 
     auto current_cpu = arch::get_current_cpu();
     auto current_task = current_cpu->current_task;

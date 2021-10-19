@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+namespace core {
+
 template <typename T>
 class vector_t {
 private:
@@ -72,3 +74,5 @@ public:
     uint64_t size() const { return m_count; }
     uint64_t capacity() const { return m_capacity; }
 };
+
+} // namespace core

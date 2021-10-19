@@ -243,6 +243,11 @@ void formatter_t<char *>::format(char *value, const format_options_t &options) {
     detail::format_arg((const char *) value, options);
 }
 
+template <>
+void formatter_t<core::string_t>::format(const core::string_t &value, const format_options_t &options) {
+    detail::format_arg(value.data(), options);
+}
+
 #define MAKE_INT_FORMATTER(type, base_type)                                                                                                \
     template <>                                                                                                                            \
     void formatter_t<type>::format(const type &value, const format_options_t &options) {                                                   \

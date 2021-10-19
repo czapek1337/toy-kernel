@@ -1,10 +1,11 @@
-#include "pmm.h"
+#include <core/lock.h>
+
 #include "../ds/bitmap.h"
-#include "../ds/lock.h"
 #include "../lib/addr.h"
 #include "../lib/log.h"
+#include "pmm.h"
 
-static lock_t pmm_lock;
+static core::lock_t pmm_lock;
 static bitmap_t pmm_bitmap;
 static uint64_t best_bet;
 
@@ -70,7 +71,7 @@ void pmm::init(stivale2_struct_mmap_tag_t *mmap) {
 }
 
 uint64_t pmm::alloc(uint64_t count) {
-    lock_guard_t lock(pmm_lock);
+    core::lock_guard_t lock(pmm_lock);
 
     auto addr = pmm_bitmap.find_first_range(best_bet, count, true);
 
@@ -94,7 +95,7 @@ uint64_t pmm::alloc(uint64_t count) {
 }
 
 void pmm::free(uint64_t addr, uint64_t count) {
-    lock_guard_t lock(pmm_lock);
+    core::lock_guard_t lock(pmm_lock);
 
     pmm_bitmap.set_range(addr / 4096, count, true);
 }

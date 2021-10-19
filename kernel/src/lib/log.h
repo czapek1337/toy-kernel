@@ -4,10 +4,10 @@
 #define __FILE_NAME__ "unknown"
 #endif
 
+#include <core/lock.h>
 #include <stdint.h>
 
 #include "../arch/asm.h"
-#include "../ds/lock.h"
 #include "../proc/sched.h"
 
 enum log_level_t : uint8_t {
@@ -116,7 +116,7 @@ class formatter_t<const char (&)[N]> {
 
 namespace detail {
 
-inline lock_t log_lock;
+inline core::lock_t log_lock;
 
 template <typename T>
 void format_arg(const T &value, const format_options_t &options) {
@@ -168,7 +168,7 @@ void print_format_log_unlocked(log_level_t level, const char *file, int line, co
 
 template <typename... Args>
 void print_format_log(log_level_t level, const char *file, int line, const char *format, Args &&...args) {
-    lock_guard_t lock(log_lock);
+    core::lock_guard_t lock(log_lock);
 
     print_format_log_unlocked(level, file, line, format, args...);
 }

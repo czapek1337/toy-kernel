@@ -1,9 +1,10 @@
-#include "idt.h"
-#include "../ds/lock.h"
+#include <core/lock.h>
+
 #include "../lib/log.h"
 #include "gdt.h"
+#include "idt.h"
 
-static lock_t idt_lock;
+static core::lock_t idt_lock;
 static idt_t idt;
 
 extern "C" uint64_t interrupt_vectors[256];
@@ -11,7 +12,7 @@ extern "C" uint64_t interrupt_vectors[256];
 extern "C" void update_idt(idt_descriptor_t *desc);
 
 void arch::init_idt() {
-    lock_guard_t lock(idt_lock);
+    core::lock_guard_t lock(idt_lock);
 
     __builtin_memset(&idt, 0, sizeof(idt));
 

@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+namespace core {
+
 template <typename T>
 concept basic_lockable = requires(T &lock) {
     {lock.lock()};
@@ -28,3 +30,5 @@ public:
     lock_guard_t(T &lock) : m_lock(lock) { m_lock.lock(); }
     ~lock_guard_t() { m_lock.unlock(); }
 };
+
+} // namespace core

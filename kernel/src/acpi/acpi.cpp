@@ -1,10 +1,11 @@
-#include "acpi.h"
-#include "../ds/vector.h"
+#include <core/vector.h>
+
 #include "../lib/addr.h"
 #include "../lib/log.h"
 #include "../mm/vmm.h"
+#include "acpi.h"
 
-static vector_t<sdt_header_t *> tables;
+static core::vector_t<sdt_header_t *> tables;
 
 static void handle_table(sdt_header_t *header) {
     log_debug("Found ACPI table '{4}' at {#016x}", (const char *) &header->signature[0], header);

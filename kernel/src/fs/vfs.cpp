@@ -5,8 +5,8 @@
 
 static vfs_node_t *root_node;
 
-static vector_t<string_t> split_path(const string_t &path) {
-    vector_t<string_t> result;
+static core::vector_t<core::string_t> split_path(const core::string_t &path) {
+    core::vector_t<core::string_t> result;
 
     auto component_start = 0;
 
@@ -15,7 +15,7 @@ static vector_t<string_t> split_path(const string_t &path) {
             auto length = i - component_start;
 
             if (length != 0)
-                result.push(string_t(path.data() + component_start, length));
+                result.push(core::string_t(path.data() + component_start, length));
 
             component_start = i + 1;
         }
@@ -24,7 +24,7 @@ static vector_t<string_t> split_path(const string_t &path) {
     auto rest_length = path.size() - component_start;
 
     if (rest_length > 0)
-        result.push(string_t(path.data() + component_start, rest_length));
+        result.push(core::string_t(path.data() + component_start, rest_length));
 
     return result;
 }
@@ -52,7 +52,7 @@ void vfs::init(stivale2_struct_modules_tag_t *modules) {
     iterate_node(root_node, 1);
 }
 
-vfs_node_t *vfs::get(vfs_node_t *parent, const string_t &path) {
+vfs_node_t *vfs::get(vfs_node_t *parent, const core::string_t &path) {
     parent = parent ?: root_node;
 
     auto components = split_path(path);
@@ -117,7 +117,7 @@ void vfs::remove_child(vfs_node_t *parent, vfs_node_t *node) {
     log_warn("Could not delete a VFS node '{}' in parent '{}'", node->name, parent->name);
 }
 
-uint64_t vfs::open(const string_t &fs_path, const string_t &path) {
+uint64_t vfs::open(const core::string_t &fs_path, const core::string_t &path) {
     auto parent = get(nullptr, fs_path);
 
     if (!parent)

@@ -1,8 +1,9 @@
-#include "heap.h"
+#include <core/lock.h>
+
 #include "../ds/linked_list.h"
-#include "../ds/lock.h"
 #include "../lib/addr.h"
 #include "../lib/log.h"
+#include "heap.h"
 #include "pmm.h"
 #include "vmm.h"
 
@@ -16,7 +17,7 @@ struct heap_block_t : linked_list_node_t<heap_block_t> {
 constexpr auto heap_base_offset = gib(8);
 constexpr auto heap_initial_size = kib(64);
 
-static lock_t heap_lock;
+static core::lock_t heap_lock;
 static heap_block_t heap_root;
 
 static heap_block_t *create_block(uint64_t size) {
@@ -96,7 +97,7 @@ void heap::free(uint64_t addr) {
     assert_msg(addr != 0, "Tried freeing a null pointer");
 
     // Acquire the heap lock
-    lock_guard_t lock(heap_lock);
+    core::lock_guard_t lock(heap_lock);
 
     // Lets figure out which block this allocation belongs to
     auto block = (heap_block_t *) (addr - sizeof(heap_block_t));

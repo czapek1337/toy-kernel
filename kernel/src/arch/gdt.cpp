@@ -1,20 +1,21 @@
-#include "gdt.h"
-#include "../ds/lock.h"
+#include <core/lock.h>
+
 #include "../lib/addr.h"
 #include "../lib/log.h"
 #include "../mm/pmm.h"
 #include "cpu.h"
+#include "gdt.h"
 
 #define ENTRY_INDEX(entry) (entry / 8)
 
-static lock_t gdt_lock;
+static core::lock_t gdt_lock;
 static gdt_t gdt;
 
 extern "C" void update_gdt(gdt_descriptor_t *desc, uint16_t code_selector, uint16_t data_selector);
 extern "C" void update_tss(uint16_t selector);
 
 void arch::init_gdt() {
-    lock_guard_t lock(gdt_lock);
+    core::lock_guard_t lock(gdt_lock);
 
     __builtin_memset(&gdt, 0, sizeof(gdt));
 
@@ -34,7 +35,7 @@ void arch::init_gdt() {
 }
 
 void arch::init_tss() {
-    lock_guard_t lock(gdt_lock);
+    core::lock_guard_t lock(gdt_lock);
 
     auto current_cpu = get_current_cpu();
 

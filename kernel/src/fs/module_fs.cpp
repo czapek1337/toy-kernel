@@ -21,7 +21,7 @@ module_fs_t::module_fs_t(vfs_node_t *node, stivale2_struct_modules_tag_t *module
     vfs::mount(this, nullptr, node);
 }
 
-uint64_t module_fs_t::open(vfs_opened_file_t *file, const string_t &path) {
+uint64_t module_fs_t::open(vfs_opened_file_t *file, const core::string_t &path) {
     return -1;
 }
 

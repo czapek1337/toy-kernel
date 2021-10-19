@@ -8,6 +8,7 @@
       "cStandard": "c11",
       "includePath": [
         "${workspaceRoot}/libs/core/src",
+        "${workspaceRoot}/libs/plugs/src",
         "${workspaceRoot}/libs/system/src"
       ]
     }

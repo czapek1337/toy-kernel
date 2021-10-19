@@ -6,7 +6,7 @@ dev_fs_t::dev_fs_t(vfs_node_t *node) {
     vfs::mount(this, nullptr, node);
 }
 
-uint64_t dev_fs_t::open(vfs_opened_file_t *file, const string_t &path) {
+uint64_t dev_fs_t::open(vfs_opened_file_t *file, const core::string_t &path) {
     return -1;
 }
 

@@ -1,8 +1,9 @@
 #pragma once
 
+#include <core/string.h>
 #include <stdint.h>
 
-#include "../ds/string.h"
+#include "../fs/vfs.h"
 #include "../intr/intr.h"
 #include "../mm/vmm.h"
 
@@ -19,7 +20,9 @@ struct task_t {
 
     page_table_t *pml4;
     registers_t regs;
-    string_t name;
+
+    core::string_t name;
+    // core::hash_map_t<uint64_t, vfs_opened_file_t *> open_fds;
 
     task_t();
     ~task_t();

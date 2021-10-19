@@ -16,6 +16,7 @@ set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -m elf_x86_64 -nostdlib -z max-page-size=0x1000")
 
 add_subdirectory(kernel)
+add_subdirectory(libs)
 add_subdirectory(user)
 
 set(OUTPUT_IMAGE_BIOS "${CMAKE_BINARY_DIR}/disk-bios.img")

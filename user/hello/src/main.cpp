@@ -1,7 +1,10 @@
+#include <system/syscalls.h>
+
 extern "C" int _start() {
-    asm("syscall" : : "a"(1), "b"("Hello, world!"));
-    asm("syscall" : : "a"(0), "b"(0));
+    system::trace("Hello, world!");
+    system::exit(0);
 
     while (true) {
+        // Make sure we exit properly and dont return from this code
     }
 }

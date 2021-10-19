@@ -1,4 +1,4 @@
-#include <system/syscall_helper.h>
+#include <system/syscalls.h>
 
 #include "../arch/asm.h"
 #include "../arch/gdt.h"

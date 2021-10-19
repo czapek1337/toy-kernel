@@ -160,7 +160,7 @@ template <typename... Args>
 void print_format_log_unlocked(log_level_t level, const char *file, int line, const char *format, Args &&...args) {
     auto current_proc = task::get_current_task();
 
-    print_format("{}: {}: {}:{}: ", current_proc ? current_proc->name : "kernel", level, file, line);
+    print_format("{}: {}: {}:{}: ", current_proc ? current_proc->name.data() : "kernel", level, file, line);
     print_format(format, args...);
 
     format_arg('\n', {});

@@ -1,6 +1,6 @@
 #include "dev_fs.h"
 
-uint64_t dev_fs_t::open(vfs_opened_file_t *file, const char *path) {
+uint64_t dev_fs_t::open(vfs_opened_file_t *file, const string_t &path) {
     return -1;
 }
 

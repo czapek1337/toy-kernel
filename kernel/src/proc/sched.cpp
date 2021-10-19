@@ -72,7 +72,7 @@ void task::init_sched() {
     // TODO: Init scheduler
 }
 
-void task::create_task(const char *name, uint64_t entry, uint64_t stack_size, bool is_user) {
+void task::create_task(const string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
     auto task = new task_t;
 
     task->exit_code = 0;
@@ -87,7 +87,7 @@ void task::create_task(const char *name, uint64_t entry, uint64_t stack_size, bo
     tasks.push(task);
 }
 
-void task::create_task_from_elf(const char *name, elf64_t *elf, uint64_t stack_size, bool is_user) {
+void task::create_task_from_elf(const string_t &name, elf64_t *elf, uint64_t stack_size, bool is_user) {
     auto task = new task_t;
     auto phdrs = (elf64_phdr_t *) ((uint64_t) elf + elf->ph_off);
 

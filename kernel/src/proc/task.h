@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include "../ds/string.h"
 #include "../intr/intr.h"
 #include "../mm/vmm.h"
 
@@ -18,8 +19,7 @@ struct task_t {
 
     page_table_t *pml4;
     registers_t regs;
-
-    const char *name;
+    string_t name;
 
     task_t();
     ~task_t();

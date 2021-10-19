@@ -14,7 +14,7 @@ struct vfs_opened_file_t {
 };
 
 struct vfs_file_system_t {
-    virtual uint64_t open(vfs_opened_file_t *file, const char *path) = 0;
+    virtual uint64_t open(vfs_opened_file_t *file, const string_t &path) = 0;
     virtual uint64_t close(vfs_opened_file_t *file, uint64_t fd) = 0;
     virtual uint64_t read(vfs_opened_file_t *file, uint8_t *buffer, uint64_t size) = 0;
     virtual uint64_t write(vfs_opened_file_t *file, const uint8_t *buffer, uint64_t size) = 0;
@@ -31,13 +31,13 @@ namespace vfs {
 
 void init();
 
-vfs_node_t *get(vfs_node_t *parent, const char *path);
-vfs_node_t *append_child(vfs_node_t *parent, const char *name);
-vfs_node_t *mount(vfs_file_system_t *fs, vfs_node_t *parent, const char *name);
+vfs_node_t *get(vfs_node_t *parent, const string_t &path);
+vfs_node_t *append_child(vfs_node_t *parent, const string_t &name);
+vfs_node_t *mount(vfs_file_system_t *fs, vfs_node_t *parent, const string_t &name);
 
-void remove_child(vfs_node_t *parent, const char *name);
+void remove_child(vfs_node_t *parent, const string_t &name);
 
-uint64_t open(const char *path);
+uint64_t open(const string_t &path);
 uint64_t close(uint64_t fd);
 uint64_t read(uint64_t fd, uint8_t *buffer, uint64_t size);
 uint64_t write(uint64_t fd, const uint8_t *buffer, uint64_t size);

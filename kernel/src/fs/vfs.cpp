@@ -4,27 +4,26 @@
 
 static vfs_node_t *root_node;
 
-static vector_t<string_t> split_path(const char *path) {
+static vector_t<string_t> split_path(const string_t &path) {
     vector_t<string_t> result;
 
-    auto path_length = __builtin_strlen(path);
     auto component_start = 0;
 
-    for (auto i = 0; i < path_length; i++) {
-        if (path[i] == '/') {
+    for (auto i = 0; i < path.size(); i++) {
+        if (path.data()[i] == '/') {
             auto length = i - component_start;
 
             if (length != 0)
-                result.push(string_t(path + component_start, length));
+                result.push(string_t(path.data() + component_start, length));
 
             component_start = i + 1;
         }
     }
 
-    auto rest_length = path_length - component_start;
+    auto rest_length = path.size() - component_start;
 
     if (rest_length > 0)
-        result.push(string_t(path + component_start, rest_length));
+        result.push(string_t(path.data() + component_start, rest_length));
 
     return result;
 }
@@ -35,7 +34,7 @@ void vfs::init() {
     mount(new dev_fs_t, nullptr, "/dev");
 }
 
-vfs_node_t *vfs::get(vfs_node_t *parent, const char *path) {
+vfs_node_t *vfs::get(vfs_node_t *parent, const string_t &path) {
     if (!parent)
         parent = root_node;
 
@@ -67,26 +66,26 @@ vfs_node_t *vfs::get(vfs_node_t *parent, const char *path) {
     return parent;
 }
 
-vfs_node_t *vfs::append_child(vfs_node_t *parent, const char *name) {
+vfs_node_t *vfs::append_child(vfs_node_t *parent, const string_t &name) {
     if (!parent)
         parent = root_node;
 
     return nullptr;
 }
 
-vfs_node_t *vfs::mount(vfs_file_system_t *fs, vfs_node_t *parent, const char *name) {
+vfs_node_t *vfs::mount(vfs_file_system_t *fs, vfs_node_t *parent, const string_t &name) {
     if (!parent)
         parent = root_node;
 
     return nullptr;
 }
 
-void vfs::remove_child(vfs_node_t *parent, const char *name) {
+void vfs::remove_child(vfs_node_t *parent, const string_t &name) {
     if (!parent)
         parent = root_node;
 }
 
-uint64_t vfs::open(const char *path) {
+uint64_t vfs::open(const string_t &path) {
     return -1;
 }
 

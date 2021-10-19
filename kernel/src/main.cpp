@@ -3,6 +3,7 @@
 #include "arch/gdt.h"
 #include "arch/idt.h"
 #include "boot/stivale2.h"
+#include "fs/vfs.h"
 #include "intr/apic.h"
 #include "lib/addr.h"
 #include "lib/log.h"
@@ -63,16 +64,19 @@ void kernel_main(stivale2_struct_t *boot_info) {
     // Configure the syscall interface
     syscall::init();
 
+    // Initialize and test the VFS
+    vfs::init();
+
     // Initialize the scheduler and kernel idle task
     task::init_sched();
     task::create_task("idle", (uint64_t) kernel_idle_thread, kib(4), false);
 
     // Create new user tasks from passed in modules
-    for (auto i = 0; i < modules->count; i++) {
-        auto module = &modules->modules[i];
+    // for (auto i = 0; i < modules->count; i++) {
+    //     auto module = &modules->modules[i];
 
-        task::create_task_from_elf(module->name, (elf64_t *) module->base, kib(4), true);
-    }
+    //     task::create_task_from_elf(module->name, (elf64_t *) module->base, kib(4), true);
+    // }
 
     // Start scheduling by enabling interrupts
     intr::release();

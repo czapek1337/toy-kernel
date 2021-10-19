@@ -1,5 +1,7 @@
 #include "sched.h"
+#include "../arch/cpu.h"
 #include "../arch/gdt.h"
+#include "../ds/lock.h"
 #include "../ds/vector.h"
 #include "../lib/addr.h"
 #include "../lib/log.h"
@@ -7,11 +9,18 @@
 #include "../mm/pmm.h"
 #include "../mm/vmm.h"
 
-static vector_t<task_t *> tasks;
+static lock_t scheduler_lock;
+static vector_t<task_t *> task_queue;
+static task_t *idle_task;
 
-static uint64_t current_task_idx;
+static void kernel_idle_task() {
+    while (true) {
+        arch::halt();
+    }
+}
 
-static void initialize_task(task_t *task, uint64_t entry, uint64_t stack_size, bool is_user) {
+static task_t *initialize_task(uint64_t entry, uint64_t stack_size, bool is_user) {
+    auto task = new task_t;
     auto stack_pages = align_up(stack_size, 4096) / 4096;
     auto stack_virt = (uint64_t) nullptr;
 
@@ -64,39 +73,38 @@ static void initialize_task(task_t *task, uint64_t entry, uint64_t stack_size, b
         task->regs.cs = GDT_KERNEL_CS64;
         task->regs.ss = GDT_KERNEL_DS64;
     }
+
+    return task;
+}
+
+static task_t *create_basic_task(const string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
+    auto task = initialize_task(entry, stack_size, is_user);
+
+    task->exit_code = 0;
+    task->name = name;
+
+    task->is_running = true;
+    task->is_user = is_user;
+    task->is_in_syscall = false;
+
+    return task;
 }
 
 void task::init_sched() {
-    current_task_idx = -1;
-
-    // TODO: Init scheduler
+    idle_task = create_basic_task("idle", (uint64_t) kernel_idle_task, kib(4), false);
 }
 
 void task::create_task(const string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
-    auto task = new task_t;
+    lock_guard_t lock(scheduler_lock);
 
-    task->exit_code = 0;
-    task->name = name;
-
-    task->is_running = true;
-    task->is_user = is_user;
-    task->is_in_syscall = false;
-
-    initialize_task(task, entry, stack_size, is_user);
-
-    tasks.push(task);
+    task_queue.push(create_basic_task(name, entry, stack_size, is_user));
 }
 
 void task::create_task_from_elf(const string_t &name, elf64_t *elf, uint64_t stack_size, bool is_user) {
-    auto task = new task_t;
+    lock_guard_t lock(scheduler_lock);
+
+    auto task = create_basic_task(name, elf->entry, stack_size, is_user);
     auto phdrs = (elf64_phdr_t *) ((uint64_t) elf + elf->ph_off);
-
-    task->exit_code = 0;
-    task->name = name;
-
-    task->is_running = true;
-    task->is_user = is_user;
-    task->is_in_syscall = false;
 
     for (auto i = 0; i < elf->ph_num; i++) {
         auto phdr = &phdrs[i];
@@ -122,54 +130,52 @@ void task::create_task_from_elf(const string_t &name, elf64_t *elf, uint64_t sta
 
         __builtin_memset((uint8_t *) phys_to_io(phys_addr) + misalignment, 0, phdr->memsz);
         __builtin_memcpy((uint8_t *) phys_to_io(phys_addr) + misalignment, (uint8_t *) ((uint64_t) elf + phdr->offset), phdr->filesz);
-
-        auto rbx = (uint8_t *) ((uint64_t) elf + phdr->offset);
-
-        log_debug("Load segment with offset={#08x}, mem_size={#08x} and filesize={#08x} at {#016x}", phdr->offset, phdr->memsz,
-                  phdr->filesz, virt_addr);
     }
 
-    log_debug("Initializing task at {#016x} with entry={#016x}", task, elf->entry);
-
-    initialize_task(task, elf->entry, stack_size, is_user);
-
-    tasks.push(task);
+    task_queue.push(task);
 }
 
-task_t *task::reschedule() {
-    // TODO: A more sophisticated rescheduling logic lol
+task_t *task::reschedule(registers_t *regs) {
+    lock_guard_t lock(scheduler_lock);
 
-    auto current_task = get_current_task();
+    auto current_cpu = arch::get_current_cpu();
+    auto current_task = current_cpu->current_task;
 
-    if (current_task) {
-        if (!current_task->is_running) {
-            log_info("Task {} exited with code {}", current_task->name, current_task->exit_code);
+    if (current_task && !current_task->is_running) {
+        delete current_task;
 
-            delete current_task;
+        current_cpu->current_task = nullptr;
+        current_task = nullptr;
+    }
 
-            tasks.remove(current_task);
-        } else if (++current_task->ticks_since_schedule < 3) {
-            return current_task;
+    if (task_queue.size() > 0) {
+        auto next_task = task_queue[0];
+
+        task_queue.remove(next_task);
+
+        if (current_task) {
+            current_task->save(regs);
+
+            task_queue.push(current_task);
         }
+
+        next_task->load(regs);
+
+        current_cpu->current_task = next_task;
+
+        return next_task;
     }
 
-    while (true) {
-        current_task_idx = (current_task_idx + 1) % tasks.size();
+    if (current_task)
+        return current_task;
 
-        auto new_task = get_current_task();
+    idle_task->load(regs);
 
-        if (!new_task->is_running)
-            continue;
+    current_cpu->current_task = idle_task;
 
-        new_task->ticks_since_schedule = 0;
-
-        return new_task;
-    }
+    return idle_task;
 }
 
 task_t *task::get_current_task() {
-    if (tasks.size() == 0 || current_task_idx == -1)
-        return nullptr;
-
-    return tasks[current_task_idx];
+    return arch::get_current_cpu()->current_task;
 }

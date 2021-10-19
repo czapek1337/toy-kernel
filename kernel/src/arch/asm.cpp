@@ -1,4 +1,5 @@
 #include "asm.h"
+#include "../lib/addr.h"
 
 void arch::pause() {
     asm("pause");
@@ -52,35 +53,35 @@ uint32_t arch::io_ind(uint16_t port) {
 }
 
 void arch::mmio_outb(uint64_t addr, uint8_t value) {
-    *(volatile uint8_t *) addr = value;
+    *(volatile uint8_t *) phys_to_io(addr) = value;
 }
 
 void arch::mmio_outw(uint64_t addr, uint16_t value) {
-    *(volatile uint16_t *) addr = value;
+    *(volatile uint16_t *) phys_to_io(addr) = value;
 }
 
 void arch::mmio_outd(uint64_t addr, uint32_t value) {
-    *(volatile uint32_t *) addr = value;
+    *(volatile uint32_t *) phys_to_io(addr) = value;
 }
 
 void arch::mmio_outq(uint64_t addr, uint64_t value) {
-    *(volatile uint64_t *) addr = value;
+    *(volatile uint64_t *) phys_to_io(addr) = value;
 }
 
 uint8_t arch::mmio_inb(uint64_t addr) {
-    return *(volatile uint8_t *) addr;
+    return *(volatile uint8_t *) phys_to_io(addr);
 }
 
 uint16_t arch::mmio_inw(uint64_t addr) {
-    return *(volatile uint16_t *) addr;
+    return *(volatile uint16_t *) phys_to_io(addr);
 }
 
 uint32_t arch::mmio_ind(uint64_t addr) {
-    return *(volatile uint32_t *) addr;
+    return *(volatile uint32_t *) phys_to_io(addr);
 }
 
 uint64_t arch::mmio_inq(uint64_t addr) {
-    return *(volatile uint64_t *) addr;
+    return *(volatile uint64_t *) phys_to_io(addr);
 }
 
 uint64_t arch::read_msr(uint32_t msr) {

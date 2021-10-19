@@ -23,7 +23,7 @@ void hpet::init() {
     if (hpet->address_space_id != 0)
         log_fatal("Unsupported HPET address space");
 
-    hpet_base = phys_to_io(hpet->address);
+    hpet_base = hpet->address;
     hpet_clock = hpet_read(HPET_REG_GENERAL_CAPS_AND_ID) >> 32;
 
     log_info("HPET base is located at {#016x}", hpet_base);

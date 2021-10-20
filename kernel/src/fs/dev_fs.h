@@ -2,6 +2,13 @@
 
 #include "vfs.h"
 
+struct udev_vfs_node_t : vfs_node_t {
+    virtual void init(vfs_opened_file_t *file) = 0;
+
+    virtual uint64_t read(vfs_opened_file_t *file, uint8_t *buffer, uint64_t size) = 0;
+    virtual uint64_t write(vfs_opened_file_t *file, const uint8_t *buffer, uint64_t size) = 0;
+};
+
 struct dev_fs_t : vfs_file_system_t {
     dev_fs_t(vfs_node_t *node);
 

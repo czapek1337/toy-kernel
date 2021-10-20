@@ -42,14 +42,14 @@ static void iterate_node(vfs_node_t *node, int depth) {
     }
 }
 
-void vfs::init(stivale2_struct_modules_tag_t *modules) {
+void vfs::init(stivale2_struct_t *boot_info) {
+    auto modules = (stivale2_struct_modules_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_MODULES_TAG);
+
     root_node = new vfs_node_t;
     root_node->name = "/";
 
     new dev_fs_t(new vfs_node_t);
     new module_fs_t(new vfs_node_t, modules);
-
-    iterate_node(root_node, 1);
 }
 
 vfs_node_t *vfs::get(vfs_node_t *parent, const core::string_t &path) {

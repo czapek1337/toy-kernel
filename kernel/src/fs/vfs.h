@@ -30,7 +30,7 @@ struct vfs_node_t {
 
 namespace vfs {
 
-void init(stivale2_struct_modules_tag_t *modules);
+void init(stivale2_struct_t *boot_info);
 
 vfs_node_t *get(vfs_node_t *parent, const core::string_t &path);
 

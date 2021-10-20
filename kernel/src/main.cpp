@@ -46,9 +46,12 @@ void kernel_main(stivale2_struct_t *boot_info) {
     vfs::init(modules); // Initialize and test the VFS
     task::init_sched(); // Initialize the scheduler and kernel idle task
 
-    // Create new user tasks from passed in modules
+    // Create a new user task from passed in modules
     for (auto i = 0; i < modules->count; i++) {
         auto module = &modules->modules[i];
+
+        if (__builtin_strcmp(module->name, "hello") != 0)
+            continue;
 
         task::create_task_from_elf(module->name, (elf64_t *) module->base, kib(4), true);
     }

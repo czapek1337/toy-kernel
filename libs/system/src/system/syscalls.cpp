@@ -22,3 +22,19 @@ void system::exit(uint64_t code) {
 void system::yield() {
     detail::make_syscall(SYSCALL_YIELD);
 }
+
+uint64_t system::open(const char *path) {
+    return detail::make_syscall(SYSCALL_OPEN, (uint64_t) path);
+}
+
+uint64_t system::close(uint64_t fd) {
+    return detail::make_syscall(SYSCALL_CLOSE, fd);
+}
+
+uint64_t system::read(uint64_t fd, uint8_t *buffer, uint64_t size) {
+    return detail::make_syscall(SYSCALL_READ, fd, (uint64_t) buffer, size);
+}
+
+uint64_t system::write(uint64_t fd, const uint8_t *buffer, uint64_t size) {
+    return detail::make_syscall(SYSCALL_WRITE, fd, (uint64_t) buffer, size);
+}

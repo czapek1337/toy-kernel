@@ -65,7 +65,7 @@ vfs_node_t *vfs::get(vfs_node_t *parent, const core::string_t &path) {
 
         auto found_child = false;
 
-        for (auto j = 0; j < !found_child && parent->children.size(); j++) {
+        for (auto j = 0; !found_child && j < parent->children.size(); j++) {
             auto child = parent->children[j];
 
             if (child->name == component) {
@@ -138,19 +138,31 @@ uint64_t vfs::open(const core::string_t &fs_path, const core::string_t &path) {
 }
 
 uint64_t vfs::close(uint64_t fd) {
-    // TODO: Implement closing files by file descriptor
+    auto current_task = task::get_current_task();
+    auto file = current_task->open_fds.lookup(fd);
 
-    return -1;
+    if (!file)
+        return -1;
+
+    return file->node->file_system->close(file, fd);
 }
 
 uint64_t vfs::read(uint64_t fd, uint8_t *buffer, uint64_t size) {
-    // TODO: Implement reading from files by file descriptor
+    auto current_task = task::get_current_task();
+    auto file = current_task->open_fds.lookup(fd);
 
-    return -1;
+    if (!file)
+        return -1;
+
+    return file->node->file_system->read(file, buffer, size);
 }
 
 uint64_t vfs::write(uint64_t fd, const uint8_t *buffer, uint64_t size) {
-    // TODO: Implement writing to files by file descriptor
+    auto current_task = task::get_current_task();
+    auto file = current_task->open_fds.lookup(fd);
 
-    return -1;
+    if (!file)
+        return -1;
+
+    return file->node->file_system->write(file, buffer, size);
 }

@@ -40,8 +40,18 @@ extern "C" uint64_t syscall_handler(registers_t *regs) {
         task::get_current_task()->kill(regs->rbx);
     } else if (regs->rdi == SYSCALL_YIELD) {
         task::reschedule(regs);
+    } else if (regs->rdi == SYSCALL_OPEN) {
+        return vfs::open("/", (const char *) regs->rbx);
+    } else if (regs->rdi == SYSCALL_CLOSE) {
+        return vfs::close(regs->rbx);
+    } else if (regs->rdi == SYSCALL_READ) {
+        return vfs::read(regs->rbx, (uint8_t *) regs->rdx, regs->rsi);
+    } else if (regs->rdi == SYSCALL_WRITE) {
+        return vfs::write(regs->rbx, (const uint8_t *) regs->rdx, regs->rsi);
     } else {
         log_error("Unknown syscall with ID {#016x}", regs->rdi);
+
+        return -1;
     }
 
     return 0;

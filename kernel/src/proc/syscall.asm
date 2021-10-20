@@ -40,7 +40,6 @@ extern syscall_handler
 syscall_entry:
     swapgs
 
-    mov byte [gs:0x22], 1 ; Set in syscall to true
     mov [gs:0x18], rsp    ; Save current user stack
     mov rsp, [gs:0x10]    ; Move in the kernel stack
 
@@ -63,7 +62,6 @@ syscall_entry:
     pop_all
 
     mov rsp, [gs:0x18]    ; Restore the user stack
-    mov byte [gs:0x22], 0 ; Set in syscall to false
 
     swapgs
     o64 sysret

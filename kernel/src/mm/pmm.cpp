@@ -9,6 +9,25 @@ static core::lock_t pmm_lock;
 static bitmap_t pmm_bitmap;
 static uint64_t best_bet;
 
+static uint64_t try_allocate_pages(uint64_t count) {
+    auto addr = pmm_bitmap.find_first_range(best_bet, count, true);
+
+    if (addr != -1) {
+        pmm_bitmap.set_range(addr, count, false);
+        best_bet = addr + count;
+
+        return addr * 4096;
+    }
+
+    if (best_bet != 0) {
+        best_bet = 0;
+
+        return try_allocate_pages(count);
+    }
+
+    return ~0;
+}
+
 const char *mmap_type_to_string(uint32_t type) {
     switch (type) {
     case STIVALE2_MMAP_USABLE: return "USABLE";
@@ -73,20 +92,10 @@ void pmm::init(stivale2_struct_mmap_tag_t *mmap) {
 uint64_t pmm::alloc(uint64_t count) {
     core::lock_guard_t lock(pmm_lock);
 
-    auto addr = pmm_bitmap.find_first_range(best_bet, count, true);
+    auto result = try_allocate_pages(count);
 
-    if (addr != -1) {
-        pmm_bitmap.set_range(addr, count, false);
-        best_bet = addr + count;
-
-        return addr * 4096;
-    }
-
-    if (best_bet != 0) {
-        best_bet = 0;
-
-        return alloc(count);
-    }
+    if (result != ~1)
+        return result;
 
     if (count == 1)
         log_fatal("Could not allocate a single page");

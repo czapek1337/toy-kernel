@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-enum syscall_number_t : uint64_t {
+enum syscall_number_t {
     SYSCALL_TRACE,
     SYSCALL_EXIT,
     SYSCALL_YIELD,

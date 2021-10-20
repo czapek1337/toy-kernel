@@ -194,7 +194,7 @@ void formatter_t<bool>::format(const bool &value, const format_options_t &option
 }
 
 void formatter_t<const char *>::format(const char *value, const format_options_t &options) {
-    if (options.get_width() != 0) {
+    if (options.get_width() != 0 && !options.get_zero_pad()) {
         auto length = (int) __builtin_strlen(value);
         auto diff = options.get_width() - length;
 

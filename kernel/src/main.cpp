@@ -4,6 +4,8 @@
 #include "arch/gdt.h"
 #include "arch/idt.h"
 #include "boot/stivale2.h"
+#include "dev/pci.h"
+#include "dev/udev.h"
 #include "fs/vfs.h"
 #include "intr/apic.h"
 #include "lib/addr.h"
@@ -19,7 +21,7 @@ void kernel_main(stivale2_struct_t *boot_info) {
     auto mmap = (stivale2_struct_mmap_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_MMAP_TAG);
     auto pmrs = (stivale2_struct_pmrs_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_PMRS_TAG);
     auto rsdp = (stivale2_struct_rsdp_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_RSDP_TAG);
-    auto modules = (stivale2_struct_modules_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_MODULES_TAG);
+    auto framebuffer = (stivale2_struct_framebuffer_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_FRAMEBUFFER_TAG);
 
     // Initialize the per-CPU structures as early as possible
     arch::init_bsp();
@@ -37,24 +39,20 @@ void kernel_main(stivale2_struct_t *boot_info) {
     pmm::init(mmap); // Initialize virtual and physical memory managers
     vmm::init(pmrs); // This will let us allocate and map physical memory
 
-    heap::init();       // Initialize heap for dynamic memory allocation
-    arch::init_tss();   // Initialize the TSS
-    acpi::init(rsdp);   // Scan the ACPI tables
-    hpet::init();       // Initialize the HPET timer
-    apic::init();       // Configure the local APIC
-    syscall::init();    // Configure the syscall interface
-    vfs::init(modules); // Initialize and test the VFS
-    task::init_sched(); // Initialize the scheduler and kernel idle task
+    heap::init();                // Initialize heap for dynamic memory allocation
+    arch::init_tss();            // Initialize the TSS
+    acpi::init(rsdp);            // Scan the ACPI tables
+    hpet::init();                // Initialize the HPET timer
+    apic::init();                // Configure the local APIC
+    syscall::init();             // Configure the syscall interface
+    vfs::init(boot_info);        // Initialize and test the VFS
+    dev::init_udev(framebuffer); // Initialize the udev file system
+    pci::scan();                 // Scan the PCI bus for devices
+    task::init_sched();          // Initialize the scheduler and kernel idle task
 
     // Create a new user task from passed in modules
-    for (auto i = 0; i < modules->count; i++) {
-        auto module = &modules->modules[i];
-
-        if (__builtin_strcmp(module->name, "hello") != 0)
-            continue;
-
-        task::create_task_from_elf(module->name, (elf64_t *) module->base, kib(4), true);
-    }
+    // auto hello_elf = query_module(boot_info, "hello.elf");
+    // task::create_task_from_elf("hello", (elf64_t *) hello_elf->base, kib(4), true);
 
     // Start scheduling by enabling interrupts
     intr::release();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/hash_map.h>
 #include <core/string.h>
 #include <stdint.h>
 
@@ -13,16 +14,16 @@ struct task_t {
 
     uint64_t syscall_kernel_stack;
     uint64_t syscall_user_stack;
+    uint64_t fd_counter;
 
     bool is_running;
     bool is_user;
-    bool is_in_syscall;
 
     page_table_t *pml4;
     registers_t regs;
 
     core::string_t name;
-    // core::hash_map_t<uint64_t, vfs_opened_file_t *> open_fds;
+    core::hash_map_t<uint64_t, vfs_opened_file_t *> open_fds;
 
     task_t();
     ~task_t();

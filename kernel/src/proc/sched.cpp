@@ -82,11 +82,11 @@ static task_t *create_basic_task(const core::string_t &name, uint64_t entry, uin
     auto task = initialize_task(entry, stack_size, is_user);
 
     task->exit_code = 0;
+    task->fd_counter = 3;
     task->name = name;
 
     task->is_running = true;
     task->is_user = is_user;
-    task->is_in_syscall = false;
 
     return task;
 }

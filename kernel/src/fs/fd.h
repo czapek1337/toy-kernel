@@ -6,7 +6,7 @@
 
 namespace vfs::fd {
 
-uint64_t allocate(vfs_opened_file_t *file);
+uint64_t allocate(VfsOpenedFile *file);
 uint64_t duplicate(uint64_t old_fd);
 
 void destroy(uint64_t fd);

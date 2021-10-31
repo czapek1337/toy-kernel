@@ -16,10 +16,10 @@ inline static void apic_write(uint32_t reg, uint32_t val) {
 }
 
 void apic::init() {
-    auto madt = (madt_t *) acpi::find_table("APIC");
+    auto madt = (MadtHeader *) acpi::find_table("APIC");
 
     if (!madt) {
-        apic_base_addr = arch::read_msr(MSR_APIC);
+        apic_base_addr = Msr::apic().read();
 
         log_warn("MADT table is not present on the system, defaulting to APIC MSR ({#016x})", apic_base_addr);
     } else {

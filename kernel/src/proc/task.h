@@ -8,7 +8,7 @@
 #include "../intr/intr.h"
 #include "../mm/vmm.h"
 
-struct task_t {
+struct Task {
     uint64_t exit_code;
     uint64_t ticks_since_schedule;
 
@@ -19,16 +19,16 @@ struct task_t {
     bool is_running;
     bool is_user;
 
-    page_table_t *pml4;
-    registers_t regs;
+    PageTable *pml4;
+    Registers regs;
 
     core::string_t name;
-    core::hash_map_t<uint64_t, vfs_opened_file_t *> open_fds;
+    core::hash_map_t<uint64_t, VfsOpenedFile *> open_fds;
 
-    task_t();
-    ~task_t();
+    Task();
+    ~Task();
 
-    void save(registers_t *regs);
-    void load(registers_t *regs);
+    void save(Registers *regs);
+    void load(Registers *regs);
     void kill(uint64_t exit_code);
 };

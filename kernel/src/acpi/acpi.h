@@ -4,7 +4,7 @@
 
 #include "../boot/stivale2.h"
 
-struct [[gnu::packed]] rsdp_header_t {
+struct [[gnu::packed]] RsdpHeader {
     char signature[8];
     uint8_t checksum;
     char oem_id[6];
@@ -16,7 +16,7 @@ struct [[gnu::packed]] rsdp_header_t {
     uint8_t reserved[3];
 };
 
-struct [[gnu::packed]] sdt_header_t {
+struct [[gnu::packed]] SdtHeader {
     char signature[4];
     uint32_t length;
     uint8_t revision;
@@ -28,20 +28,18 @@ struct [[gnu::packed]] sdt_header_t {
     uint32_t creator_revision;
 };
 
-struct [[gnu::packed]] rsdt_t {
-    sdt_header_t header;
+struct [[gnu::packed]] RsdtHeader : SdtHeader {
     uint32_t entries[];
 };
 
-struct [[gnu::packed]] xsdt_t {
-    sdt_header_t header;
+struct [[gnu::packed]] XsdtHeader : SdtHeader {
     uint64_t entries[];
 };
 
 namespace acpi {
 
-void init(stivale2_struct_rsdp_tag_t *rsdp);
+void init(Stivale2StructRsdpTag *rsdp);
 
-sdt_header_t *find_table(const char *signature);
+SdtHeader *find_table(const char *signature);
 
 } // namespace acpi

@@ -2,11 +2,7 @@
 
 #include <stdint.h>
 
-enum cpu_flags_t {
-    CPU_FLAGS_INTERRUPT = 1 << 9,
-};
-
-struct registers_t {
+struct Registers {
     uint64_t r15;
     uint64_t r14;
     uint64_t r13;
@@ -31,10 +27,10 @@ struct registers_t {
     uint64_t ss;
 };
 
-class interrupt_retainer_t {
+class InterruptGuard {
 public:
-    interrupt_retainer_t();
-    ~interrupt_retainer_t();
+    InterruptGuard();
+    ~InterruptGuard();
 };
 
 namespace intr {

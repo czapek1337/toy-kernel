@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-enum apic_reg_t {
+enum LapicRegister {
     LAPIC_CPU_ID = 0x20,
     LAPIC_REG_EOI = 0xb0,
     LAPIC_REG_ICR0 = 0x300,

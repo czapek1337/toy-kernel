@@ -41,11 +41,11 @@ static constexpr const char *exception_messages[] = {
     "Reserved",
 };
 
-interrupt_retainer_t::interrupt_retainer_t() {
+InterruptGuard::InterruptGuard() {
     intr::retain();
 }
 
-interrupt_retainer_t::~interrupt_retainer_t() {
+InterruptGuard::~InterruptGuard() {
     intr::release();
 }
 
@@ -93,7 +93,7 @@ void intr::release() {
         arch::enable_interrupts();
 }
 
-void error_print_registers(registers_t *regs) {
+void error_print_registers(Registers *regs) {
     uint64_t cr2, cr3;
 
     asm("mov %%cr2, %0\n"
@@ -110,7 +110,7 @@ void error_print_registers(registers_t *regs) {
     log_info_unlocked("- R13: {#016x} | R14: {#016x} | R15: {#016x}", regs->r13, regs->r14, regs->r15);
 }
 
-void interrupt_error_handler(registers_t *regs) {
+void interrupt_error_handler(Registers *regs) {
     log_error_unlocked("An unexpected CPU exception occurred{}!", (regs->cs & 3) ? " in user mode" : "");
     log_error_unlocked("- Exception: {} ({})", exception_messages[regs->isr_number], regs->isr_number);
     log_error_unlocked("- Error code: {#016x}", regs->err_code);
@@ -140,7 +140,7 @@ void interrupt_error_handler(registers_t *regs) {
     }
 }
 
-extern "C" void interrupt_handler(registers_t *regs) {
+extern "C" void interrupt_handler(Registers *regs) {
     intr::retain_disable();
 
     if (regs->isr_number < 32) {

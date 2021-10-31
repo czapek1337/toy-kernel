@@ -15,13 +15,10 @@ inline static void hpet_write(uint64_t reg, uint64_t val) {
 }
 
 void hpet::init() {
-    auto hpet = (hpet_t *) acpi::find_table("HPET");
+    auto hpet = (HpetHeader *) acpi::find_table("HPET");
 
-    if (!hpet)
-        log_fatal("HPET table is not present on the system");
-
-    if (hpet->address_space_id != 0)
-        log_fatal("Unsupported HPET address space");
+    assert_msg(hpet, "HPET table is not present on the system");
+    assert_msg(hpet->address_space_id == 0, "Unsupported HPET address space");
 
     hpet_base = hpet->address;
     hpet_clock = hpet_read(HPET_REG_GENERAL_CAPS_AND_ID) >> 32;

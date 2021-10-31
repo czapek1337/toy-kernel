@@ -1,23 +1,30 @@
-SECTIONS {
-    . = 0x00800000;
+ENTRY(user_start)
 
-    .text : {
+SECTIONS
+{
+    . = 0x200000;
+
+    .text :
+    {
         *(.text*)
     }
 
     . += 0x1000;
 
-    .rodata : {
+    .rodata :
+    {
         *(.rodata*)
     }
 
     . += 0x1000;
 
-    .data : {
+    .data :
+    {
         *(.data*)
     }
 
-    .bss : {
+    .bss :
+    {
         *(.bss*)
     }
 }

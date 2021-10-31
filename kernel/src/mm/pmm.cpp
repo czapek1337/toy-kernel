@@ -6,7 +6,7 @@
 #include "pmm.h"
 
 static core::lock_t pmm_lock;
-static bitmap_t pmm_bitmap;
+static Bitmap pmm_bitmap;
 static uint64_t best_bet;
 
 static uint64_t try_allocate_pages(uint64_t count) {
@@ -43,7 +43,7 @@ const char *mmap_type_to_string(uint32_t type) {
     return "UNKNOWN";
 }
 
-void pmm::init(stivale2_struct_mmap_tag_t *mmap) {
+void pmm::init(Stivale2StructMemoryMapTag *mmap) {
     log_info("Current system memory map:");
 
     for (auto i = 0; i < mmap->count; i++) {
@@ -75,7 +75,7 @@ void pmm::init(stivale2_struct_mmap_tag_t *mmap) {
     if (bitmap_addr == 0)
         log_fatal("Could not find a suitable memory region for the bitmap of size of {} bytes", bitmap_size);
 
-    pmm_bitmap = bitmap_t((uint8_t *) phys_to_io(bitmap_addr), bitmap_size);
+    pmm_bitmap = Bitmap((uint8_t *) phys_to_io(bitmap_addr), bitmap_size);
     pmm_bitmap.set_range(0, bitmap_size * 8, false);
 
     for (auto i = 0; i < mmap->count; i++) {

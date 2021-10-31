@@ -6,7 +6,7 @@
 
 namespace pmm {
 
-void init(stivale2_struct_mmap_tag_t *mmap);
+void init(Stivale2StructMemoryMapTag *mmap);
 
 uint64_t alloc(uint64_t count);
 

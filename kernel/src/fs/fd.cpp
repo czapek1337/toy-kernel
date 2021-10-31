@@ -3,7 +3,7 @@
 
 static uint64_t fd_counter = 0;
 
-uint64_t vfs::fd::allocate(vfs_opened_file_t *file) {
+uint64_t vfs::fd::allocate(VfsOpenedFile *file) {
     auto current_task = task::get_current_task();
     auto fd = current_task->fd_counter++;
 

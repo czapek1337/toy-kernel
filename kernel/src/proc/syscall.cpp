@@ -9,24 +9,24 @@
 
 extern "C" void syscall_entry();
 
-extern void error_print_registers(registers_t *regs);
+extern void error_print_registers(Registers *regs);
 
 void syscall::init() {
     // Enable syscall in EFER
-    arch::write_msr(MSR_EFER, arch::read_msr(MSR_EFER) | 0x01 /* EFER.SCE */);
+    Msr::efer().write(Msr::efer().read() | 0x01 /* EFER.SCE */);
 
     // Set up syscall handler
-    arch::write_msr(MSR_STAR, ((uint64_t) GDT_KERNEL_CS64 << 32) | ((uint64_t) (GDT_USER_BASE | 3 /* CPL3 */) << 48));
-    arch::write_msr(MSR_LSTAR, (uint64_t) syscall_entry);
-    arch::write_msr(MSR_SYSCALL_FLAG_MASK, 0x200);
+    Msr::star().write(((uint64_t) GDT_KERNEL_CS64 << 32) | ((uint64_t) (GDT_USER_BASE | 3 /* CPL3 */) << 48));
+    Msr::lstar().write((uint64_t) syscall_entry);
+    Msr::syscall_flag_mask().write(0x200);
 }
 
 void syscall::set_gs_base(uint64_t user_gs) {
-    arch::write_msr(MSR_GS_BASE, user_gs);
-    arch::write_msr(MSR_KERN_GS_BASE, user_gs /* TODO: Fix this */);
+    Msr::gs_base().write(user_gs);
+    Msr::kernel_gs_base().write(user_gs);
 }
 
-extern "C" uint64_t syscall_handler(registers_t *regs) {
+extern "C" uint64_t syscall_handler(Registers *regs) {
     // RDI - syscall ID
     // RBX - first argument
     // RDX - second argument

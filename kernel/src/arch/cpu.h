@@ -5,13 +5,13 @@
 #include "../proc/task.h"
 #include "gdt.h"
 
-struct cpu_t {
+struct ProcessorState {
     uint64_t ap_id;
     uint64_t lapic_id;
 
-    tss_t tss;
+    Tss tss;
 
-    task_t *current_task;
+    Task *current_task;
 
     bool is_present;
     bool retain_enable;
@@ -24,7 +24,7 @@ namespace arch {
 void init_bsp();
 void init_cpu(uint64_t ap_id, uint64_t lapic_id);
 
-cpu_t *get_cpu(uint64_t index);
-cpu_t *get_current_cpu();
+ProcessorState *get_cpu(uint64_t index);
+ProcessorState *get_current_cpu();
 
 } // namespace arch

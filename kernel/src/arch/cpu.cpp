@@ -5,7 +5,7 @@
 #include "../mm/pmm.h"
 
 // In future if we need more CPUs increate the size of this array
-static cpu_t cpu_info[16];
+static ProcessorState cpu_info[16];
 
 void arch::init_bsp() {
     __builtin_memset(cpu_info, 0, sizeof(cpu_info));
@@ -25,7 +25,7 @@ void arch::init_bsp() {
 void arch::init_cpu(uint64_t ap_id, uint64_t lapic_id) {
     auto current = get_current_cpu();
 
-    __builtin_memset(current, 0, sizeof(cpu_t));
+    __builtin_memset(current, 0, sizeof(ProcessorState));
 
     current->ap_id = ap_id;
     current->lapic_id = lapic_id;
@@ -37,7 +37,7 @@ void arch::init_cpu(uint64_t ap_id, uint64_t lapic_id) {
     current->tss.ist[0] = phys_to_io(pmm::alloc(2) + kib(8));
 }
 
-cpu_t *arch::get_cpu(uint64_t index) {
+ProcessorState *arch::get_cpu(uint64_t index) {
     assert_msg(index < 16, "The kernel was booted with more APs than supported. Please refer to instructions in arch/cpu.cpp");
 
     auto cpu = &cpu_info[index];
@@ -47,6 +47,6 @@ cpu_t *arch::get_cpu(uint64_t index) {
     return cpu;
 }
 
-cpu_t *arch::get_current_cpu() {
+ProcessorState *arch::get_current_cpu() {
     return get_cpu(apic::get_current_cpu());
 }

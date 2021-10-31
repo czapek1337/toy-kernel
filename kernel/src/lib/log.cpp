@@ -1,6 +1,6 @@
 #include "log.h"
 
-static void print_integer(uint64_t value, const format_options_t &options) {
+static void print_integer(uint64_t value, const FormatOptions &options) {
     char buffer[72] = {0};
 
     auto alphabet = options.get_repr() == FMT_REPR_HEX_UPPER ? "0123456789ABCDEF" : "0123456789abcdef";
@@ -47,7 +47,7 @@ static void print_integer(uint64_t value, const format_options_t &options) {
     detail::format_arg(ptr + 1, {});
 }
 
-static void print_integer(int64_t value, const format_options_t &options) {
+static void print_integer(int64_t value, const FormatOptions &options) {
     if (options.get_sign() == FMT_SIGN_PLUS) {
         detail::format_arg(value < 0 ? '-' : '+', options);
     } else if (options.get_sign() == FMT_SIGN_SPACE) {
@@ -63,7 +63,7 @@ static void print_integer(int64_t value, const format_options_t &options) {
     }
 }
 
-const char *format_options_t::parse_align(const char *options) {
+const char *FormatOptions::parse_align(const char *options) {
     set_fill_char(' ');
     set_alignment(FMT_ALIGN_NONE);
 
@@ -98,7 +98,7 @@ const char *format_options_t::parse_align(const char *options) {
     return options;
 }
 
-const char *format_options_t::parse_sign(const char *options) {
+const char *FormatOptions::parse_sign(const char *options) {
     set_sign(FMT_SIGN_NONE);
 
     if (*options == '}')
@@ -116,7 +116,7 @@ const char *format_options_t::parse_sign(const char *options) {
     return options;
 }
 
-const char *format_options_t::parse_width(const char *options) {
+const char *FormatOptions::parse_width(const char *options) {
     set_width(0);
 
     while (*options != '}' && *options >= '0' && *options <= '9') {
@@ -126,7 +126,7 @@ const char *format_options_t::parse_width(const char *options) {
     return options;
 }
 
-const char *format_options_t::parse_repr(const char *options) {
+const char *FormatOptions::parse_repr(const char *options) {
     set_repr(FMT_REPR_NONE);
 
     if (*options == '}')
@@ -146,7 +146,7 @@ const char *format_options_t::parse_repr(const char *options) {
     return options;
 }
 
-const char *format_options_t::parse(const char *options) {
+const char *FormatOptions::parse(const char *options) {
     set_alternate(false);
     set_zero_pad(false);
 
@@ -173,7 +173,7 @@ const char *format_options_t::parse(const char *options) {
 }
 
 template <>
-void formatter_t<log_level_t>::format(const log_level_t &value, const format_options_t &options) {
+void Formatter<LogLevel>::format(const LogLevel &value, const FormatOptions &options) {
     switch (value) {
     case LOG_LEVEL_DEBUG: detail::format_arg("debug", options); break;
     case LOG_LEVEL_INFO: detail::format_arg("info", options); break;
@@ -184,16 +184,16 @@ void formatter_t<log_level_t>::format(const log_level_t &value, const format_opt
 }
 
 template <>
-void formatter_t<char>::format(const char &value, [[maybe_unused]] const format_options_t &options) {
+void Formatter<char>::format(const char &value, [[maybe_unused]] const FormatOptions &options) {
     arch::io_outb(0x3f8, value);
 }
 
 template <>
-void formatter_t<bool>::format(const bool &value, const format_options_t &options) {
+void Formatter<bool>::format(const bool &value, const FormatOptions &options) {
     detail::format_arg(value ? "true" : "false", options);
 }
 
-void formatter_t<const char *>::format(const char *value, const format_options_t &options) {
+void Formatter<const char *>::format(const char *value, const FormatOptions &options) {
     if (options.get_width() != 0 && !options.get_zero_pad()) {
         auto length = (int) __builtin_strlen(value);
         auto diff = options.get_width() - length;
@@ -239,18 +239,18 @@ void formatter_t<const char *>::format(const char *value, const format_options_t
     }
 }
 
-void formatter_t<char *>::format(char *value, const format_options_t &options) {
+void Formatter<char *>::format(char *value, const FormatOptions &options) {
     detail::format_arg((const char *) value, options);
 }
 
 template <>
-void formatter_t<core::string_t>::format(const core::string_t &value, const format_options_t &options) {
+void Formatter<core::string_t>::format(const core::string_t &value, const FormatOptions &options) {
     detail::format_arg(value.data(), options);
 }
 
 #define MAKE_INT_FORMATTER(type, base_type)                                                                                                \
     template <>                                                                                                                            \
-    void formatter_t<type>::format(const type &value, const format_options_t &options) {                                                   \
+    void Formatter<type>::format(const type &value, const FormatOptions &options) {                                                        \
         print_integer((base_type) value, options);                                                                                         \
     }
 

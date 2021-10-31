@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-struct [[gnu::packed]] elf64_t {
+struct [[gnu::packed]] Elf64 {
     uint8_t ident[16];
     uint16_t type;
     uint16_t machine;
@@ -19,7 +19,7 @@ struct [[gnu::packed]] elf64_t {
     uint16_t shstrndx;
 };
 
-struct [[gnu::packed]] elf64_phdr_t {
+struct [[gnu::packed]] Elf64Phdr {
     uint32_t type;
     uint32_t flags;
     uint64_t offset;
@@ -30,7 +30,7 @@ struct [[gnu::packed]] elf64_phdr_t {
     uint64_t align;
 };
 
-struct [[gnu::packed]] elf64_shdr_t {
+struct [[gnu::packed]] Elf64Shdr {
     uint32_t name;
     uint32_t type;
     uint64_t flags;

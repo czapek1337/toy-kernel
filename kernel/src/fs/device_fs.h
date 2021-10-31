@@ -1,17 +1,16 @@
 #pragma once
 
-#include "../boot/stivale2.h"
 #include "vfs.h"
 
-struct ModuleFsNode : VfsNode {
-    uint64_t base;
-    uint64_t end;
+struct DeviceFsNode : VfsNode {
+    virtual void init(VfsOpenedFile *file) = 0;
 
-    ModuleFsNode(uint64_t base, uint64_t end);
+    virtual uint64_t read(VfsOpenedFile *file, uint8_t *buffer, uint64_t size) = 0;
+    virtual uint64_t write(VfsOpenedFile *file, const uint8_t *buffer, uint64_t size) = 0;
 };
 
-struct ModuleFs : VfsFileSystem {
-    ModuleFs(VfsNode *node, Stivale2StructModulesTag *modules);
+struct DeviceFs : VfsFileSystem {
+    DeviceFs(VfsNode *node);
 
     uint64_t open(VfsOpenedFile *file, const core::string_t &path) override;
     uint64_t close(VfsOpenedFile *file, uint64_t fd) override;

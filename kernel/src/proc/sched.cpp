@@ -11,8 +11,8 @@
 #include "sched.h"
 
 static core::lock_t scheduler_lock;
-static core::vector_t<task_t *> task_queue;
-static task_t *idle_task;
+static core::vector_t<Task *> task_queue;
+static Task *idle_task;
 
 static void kernel_idle_task() {
     while (true) {
@@ -20,8 +20,8 @@ static void kernel_idle_task() {
     }
 }
 
-static task_t *initialize_task(uint64_t entry, uint64_t stack_size, bool is_user) {
-    auto task = new task_t;
+static Task *initialize_task(uint64_t entry, uint64_t stack_size, bool is_user) {
+    auto task = new Task;
     auto stack_pages = align_up(stack_size, 4096) / 4096;
     auto stack_virt = (uint64_t) nullptr;
 
@@ -61,11 +61,11 @@ static task_t *initialize_task(uint64_t entry, uint64_t stack_size, bool is_user
     task->syscall_kernel_stack = syscall_stack + kib(2);
     task->syscall_user_stack = 0;
 
-    __builtin_memset(&task->regs, 0, sizeof(registers_t));
+    __builtin_memset(&task->regs, 0, sizeof(Registers));
 
     task->regs.rip = entry;
     task->regs.rsp = stack_virt;
-    task->regs.rflags = CPU_FLAGS_INTERRUPT;
+    task->regs.rflags = 0x200;
 
     if (is_user) {
         task->regs.cs = GDT_USER_CS64 | 3 /* Privilege level */;
@@ -78,7 +78,7 @@ static task_t *initialize_task(uint64_t entry, uint64_t stack_size, bool is_user
     return task;
 }
 
-static task_t *create_basic_task(const core::string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
+static Task *create_basic_task(const core::string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
     auto task = initialize_task(entry, stack_size, is_user);
 
     task->exit_code = 0;
@@ -101,11 +101,11 @@ void task::create_task(const core::string_t &name, uint64_t entry, uint64_t stac
     task_queue.push(create_basic_task(name, entry, stack_size, is_user));
 }
 
-void task::create_task_from_elf(const core::string_t &name, elf64_t *elf, uint64_t stack_size, bool is_user) {
+void task::create_task_from_elf(const core::string_t &name, Elf64 *elf, uint64_t stack_size, bool is_user) {
     core::lock_guard_t lock(scheduler_lock);
 
     auto task = create_basic_task(name, elf->entry, stack_size, is_user);
-    auto phdrs = (elf64_phdr_t *) ((uint64_t) elf + elf->ph_off);
+    auto phdrs = (Elf64Phdr *) ((uint64_t) elf + elf->ph_off);
 
     for (auto i = 0; i < elf->ph_num; i++) {
         auto phdr = &phdrs[i];
@@ -136,7 +136,7 @@ void task::create_task_from_elf(const core::string_t &name, elf64_t *elf, uint64
     task_queue.push(task);
 }
 
-task_t *task::reschedule(registers_t *regs) {
+Task *task::reschedule(Registers *regs) {
     core::lock_guard_t lock(scheduler_lock);
 
     auto current_cpu = arch::get_current_cpu();
@@ -177,6 +177,6 @@ task_t *task::reschedule(registers_t *regs) {
     return idle_task;
 }
 
-task_t *task::get_current_task() {
+Task *task::get_current_task() {
     return arch::get_current_cpu()->current_task;
 }

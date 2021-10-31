@@ -6,42 +6,64 @@
 #include "cpu.h"
 #include "gdt.h"
 
-#define ENTRY_INDEX(entry) (entry / 8)
-
 static core::lock_t gdt_lock;
-static gdt_t gdt;
+static Gdt gdt;
 
-extern "C" void update_gdt(gdt_descriptor_t *desc, uint16_t code_selector, uint16_t data_selector);
-extern "C" void update_tss(uint16_t selector);
+extern "C" void update_gdt(const GdtDescriptor &desc);
+extern "C" void update_tss();
 
-void arch::init_gdt() {
+static GdtEntry gdt_entry(uint8_t access, uint8_t granularity) {
+    GdtEntry entry;
+
+    entry.limit = 0;
+    entry.base_low = 0;
+    entry.base_mid = 0;
+    entry.flags = access;
+    entry.granularity = granularity;
+    entry.base_high = 0;
+
+    return entry;
+}
+
+static GdtExtendedEntry gdt_tss_entry(uint64_t address) {
+    GdtExtendedEntry entry;
+
+    entry.limit = sizeof(Tss) - 1;
+    entry.base_low = (uint16_t) (address & 0xffff);
+    entry.base_mid = (uint8_t) ((address >> 16) & 0xff);
+    entry.flags = 0b10001001;       // yeah
+    entry.granularity = 0b00100000; // that's a thing now
+    entry.base_high = (uint8_t) ((address >> 24) & 0xff);
+    entry.base_high_ex = (uint32_t) ((address >> 32) & 0xffff'ffff);
+    entry.reserved = 0;
+
+    return entry;
+}
+
+void initialize_gdt() {
     core::lock_guard_t lock(gdt_lock);
 
     __builtin_memset(&gdt, 0, sizeof(gdt));
 
-    gdt.entries[ENTRY_INDEX(GDT_KERNEL_BASE)] = gdt_entry_t(0, 0);
-    gdt.entries[ENTRY_INDEX(GDT_KERNEL_CS64)] = gdt_entry_t(0b10011000, 0b00100000);
-    gdt.entries[ENTRY_INDEX(GDT_KERNEL_DS64)] = gdt_entry_t(0b10010110, 0b00100000);
+    gdt.entries[1] = gdt_entry(0b10011000, 0b00100000);
+    gdt.entries[2] = gdt_entry(0b10010110, 0b00100000);
 
-    gdt.entries[ENTRY_INDEX(GDT_USER_BASE)] = gdt_entry_t(0, 0);
-    gdt.entries[ENTRY_INDEX(GDT_USER_DS64)] = gdt_entry_t(0b11110110, 0b00100000);
-    gdt.entries[ENTRY_INDEX(GDT_USER_CS64)] = gdt_entry_t(0b11111000, 0b00100000);
+    gdt.entries[4] = gdt_entry(0b11110110, 0b00100000);
+    gdt.entries[5] = gdt_entry(0b11111000, 0b00100000);
 
-    gdt.descriptor = gdt_descriptor_t((uint64_t) &gdt, sizeof(gdt.entries) + sizeof(gdt.tss_entry) - 1);
-
-    update_gdt(&gdt.descriptor, GDT_KERNEL_CS64, GDT_KERNEL_DS64);
+    update_gdt({.limit = sizeof(Gdt) - 1, .base = (uint64_t) &gdt});
 
     log_info("Successfully loaded the GDT");
 }
 
-void arch::init_tss() {
+void initialize_tss() {
     core::lock_guard_t lock(gdt_lock);
 
-    auto current_cpu = get_current_cpu();
+    auto current_cpu = arch::get_current_cpu();
 
-    gdt.tss_entry = tss_entry_t((uint64_t) &current_cpu->tss);
+    gdt.tss_entry = gdt_tss_entry((uint64_t) &current_cpu->tss);
 
-    update_tss(GDT_TSS);
+    update_tss();
 
     log_info("Successfully loaded the TSS for CPU #{}", current_cpu->ap_id);
 }

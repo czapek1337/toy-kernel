@@ -16,43 +16,39 @@
 #include "proc/sched.h"
 #include "proc/syscall.h"
 
-void kernel_main(stivale2_struct_t *boot_info) {
-    // Grab pointers to struct tags from the boot info
-    auto mmap = (stivale2_struct_mmap_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_MMAP_TAG);
-    auto pmrs = (stivale2_struct_pmrs_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_PMRS_TAG);
-    auto rsdp = (stivale2_struct_rsdp_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_RSDP_TAG);
-    auto framebuffer = (stivale2_struct_framebuffer_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_FRAMEBUFFER_TAG);
+extern "C" void kernel_start(Stivale2Struct *boot_info) {
+    auto mmap = (Stivale2StructMemoryMapTag *) boot_info->query_tag(STIVALE2_STRUCT_MMAP_TAG);
+    auto pmrs = (Stivale2StructPmrsTag *) boot_info->query_tag(STIVALE2_STRUCT_PMRS_TAG);
+    auto rsdp = (Stivale2StructRsdpTag *) boot_info->query_tag(STIVALE2_STRUCT_RSDP_TAG);
+    auto framebuffer = (Stivale2StructFramebufferTag *) boot_info->query_tag(STIVALE2_STRUCT_FRAMEBUFFER_TAG);
 
-    // Initialize the per-CPU structures as early as possible
     arch::init_bsp();
-
-    // Make sure interrupts are disabled until the scheduler is initialized
     intr::retain();
 
-    // Make sure we have a valid RSDP tag
-    if (!rsdp)
-        log_fatal("Cannot proceed without a valid RSDP tag");
+    assert_msg(rsdp, "Cannot proceed without a valid RSDP tag");
 
-    arch::init_gdt(); // Set up necessary x86_64 structures like GDT and an IDT
-    arch::init_idt(); // That will let us handle interrupts from external devices and CPU exceptions
+    initialize_gdt();
+    initialize_idt();
 
-    pmm::init(mmap); // Initialize virtual and physical memory managers
-    vmm::init(pmrs); // This will let us allocate and map physical memory
+    pmm::init(mmap);
+    vmm::init(pmrs);
 
-    heap::init();                // Initialize heap for dynamic memory allocation
-    arch::init_tss();            // Initialize the TSS
-    acpi::init(rsdp);            // Scan the ACPI tables
-    hpet::init();                // Initialize the HPET timer
-    apic::init();                // Configure the local APIC
-    syscall::init();             // Configure the syscall interface
-    vfs::init(boot_info);        // Initialize and test the VFS
-    dev::init_udev(framebuffer); // Initialize the udev file system
-    pci::scan();                 // Scan the PCI bus for devices
-    task::init_sched();          // Initialize the scheduler and kernel idle task
+    initialize_tss();
+
+    heap::init();
+    acpi::init(rsdp);
+    hpet::init();
+    apic::init();
+    syscall::init();
+    vfs::init(boot_info);
+    dev::init_udev(framebuffer);
+    pci::scan();
+    task::init_sched();
 
     // Create a new user task from passed in modules
-    // auto hello_elf = query_module(boot_info, "hello.elf");
-    // task::create_task_from_elf("hello", (elf64_t *) hello_elf->base, kib(4), true);
+    auto hello_elf = boot_info->query_module("hello.elf");
+
+    task::create_task_from_elf("hello", (Elf64 *) hello_elf->base, kib(4), true);
 
     // Start scheduling by enabling interrupts
     intr::release();

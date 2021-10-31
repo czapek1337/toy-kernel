@@ -10,7 +10,7 @@
 // This is an adapted version of Embedded Artistry's malloc implementation that's contained in
 // their libmemory repository: https://github.com/embeddedartistry/libmemory/
 
-struct heap_block_t : linked_list_node_t<heap_block_t> {
+struct HeapBlock : LinkedListNode<HeapBlock> {
     uint64_t size;
 };
 
@@ -18,20 +18,20 @@ constexpr auto heap_base_offset = gib(8);
 constexpr auto heap_initial_size = kib(64);
 
 static core::lock_t heap_lock;
-static heap_block_t heap_root;
+static HeapBlock heap_root;
 
-static heap_block_t *create_block(uint64_t size) {
+static HeapBlock *create_block(uint64_t size) {
     auto pages = align_up(size, 4096) / 4096;
 
     if (pages < 8)
         pages = 8;
 
     auto block_phys = pmm::alloc(pages);
-    auto block = (heap_block_t *) phys_to_io(heap_base_offset + block_phys);
+    auto block = (HeapBlock *) phys_to_io(heap_base_offset + block_phys);
 
     vmm::kernel_pml4->map((uint64_t) block, block_phys, pages * 4096, PAGE_TABLE_ENTRY_PRESENT | PAGE_TABLE_ENTRY_WRITE);
 
-    block->size = pages * 4096 - sizeof(heap_block_t);
+    block->size = pages * 4096 - sizeof(HeapBlock);
 
     return block;
 }
@@ -65,10 +65,10 @@ uint64_t heap::alloc(uint64_t size) {
 
         auto space_left = block->size - size;
 
-        if (space_left >= sizeof(heap_block_t) + 32) {
-            auto new_block = (heap_block_t *) ((uint64_t) block + sizeof(heap_block_t) + size);
+        if (space_left >= sizeof(HeapBlock) + 32) {
+            auto new_block = (HeapBlock *) ((uint64_t) block + sizeof(HeapBlock) + size);
 
-            new_block->size = block->size - size - sizeof(heap_block_t);
+            new_block->size = block->size - size - sizeof(HeapBlock);
 
             block->size = size;
 
@@ -79,7 +79,7 @@ uint64_t heap::alloc(uint64_t size) {
 
         heap_lock.unlock();
 
-        return (uint64_t) block + sizeof(heap_block_t);
+        return (uint64_t) block + sizeof(HeapBlock);
     }
 
     // Allocate a fresh block of heap memory for the next run
@@ -100,7 +100,7 @@ void heap::free(uint64_t addr) {
     core::lock_guard_t lock(heap_lock);
 
     // Lets figure out which block this allocation belongs to
-    auto block = (heap_block_t *) (addr - sizeof(heap_block_t));
+    auto block = (HeapBlock *) (addr - sizeof(HeapBlock));
     auto add_to_the_tail = true;
 
     // Lets put that block back in its correct spot in the free list
@@ -120,13 +120,13 @@ void heap::free(uint64_t addr) {
     }
     // Else, merge any adjacent blocks to reduce fragmentation
     else {
-        heap_block_t *last_block = nullptr;
+        HeapBlock *last_block = nullptr;
 
         for (auto it_block = heap_root.next(), next = it_block->next(); it_block != &heap_root; it_block = next, next = it_block->next()) {
-            auto previous_data = (uint64_t) last_block + sizeof(heap_block_t);
+            auto previous_data = (uint64_t) last_block + sizeof(HeapBlock);
 
             if (last_block && previous_data + last_block->size == (uint64_t) it_block) {
-                last_block->size += sizeof(heap_block_t) + it_block->size;
+                last_block->size += sizeof(HeapBlock) + it_block->size;
 
                 it_block->remove();
 

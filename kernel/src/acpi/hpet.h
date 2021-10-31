@@ -4,14 +4,13 @@
 
 #include "acpi.h"
 
-enum hpet_reg_t {
+enum HpetRegister {
     HPET_REG_GENERAL_CAPS_AND_ID = 0x00,
     HPET_REG_GENERAL_CONFIG = 0x10,
     HPET_REG_MAIN_COUNTER = 0xf0,
 };
 
-struct [[gnu::packed]] hpet_t {
-    sdt_header_t header;
+struct [[gnu::packed]] HpetHeader : SdtHeader {
     uint8_t hardware_rev_id;
     uint8_t info;
     uint16_t pci_vendor;

@@ -1,19 +1,17 @@
 global update_gdt:function
 global update_tss:function
 
-; rdi - gdtr pointer
-; rsi - code selector
-; rdx - data selector
 update_gdt:
     lgdt [rdi]
 
-    mov ss, dx
-    mov ds, dx
-    mov es, dx
+    mov ax, 0x10
+    mov ss, ax
+    mov ds, ax
+    mov es, ax
 
     lea rax, [rel .trampoline]
 
-    push rsi
+    push qword 0x08
     push rax
 
     retfq
@@ -21,7 +19,7 @@ update_gdt:
 .trampoline:
     ret
 
-; rdi - tss selector
 update_tss:
-    ltr di
+    mov ax, 0x30
+    ltr ax
     ret

@@ -10,7 +10,7 @@
 #include "../arch/asm.h"
 #include "../proc/sched.h"
 
-enum log_level_t : uint8_t {
+enum LogLevel : uint8_t {
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_INFO,
     LOG_LEVEL_WARN,
@@ -18,21 +18,21 @@ enum log_level_t : uint8_t {
     LOG_LEVEL_FATAL,
 };
 
-enum format_align_t : uint8_t {
+enum FormatAlign : uint8_t {
     FMT_ALIGN_NONE,
     FMT_ALIGN_LEFT,
     FMT_ALIGN_CENTER,
     FMT_ALIGN_RIGHT,
 };
 
-enum format_sign_t : uint8_t {
+enum FormatSign : uint8_t {
     FMT_SIGN_NONE,
     FMT_SIGN_PLUS,
     FMT_SIGN_MINUS,
     FMT_SIGN_SPACE,
 };
 
-enum format_repr_t : uint8_t {
+enum FormatRepr : uint8_t {
     FMT_REPR_NONE,
     FMT_REPR_BINARY,
     FMT_REPR_OCTAL,
@@ -41,7 +41,7 @@ enum format_repr_t : uint8_t {
     FMT_REPR_HEX_UPPER,
 };
 
-class format_options_t {
+class FormatOptions {
     const char *parse_align(const char *options);
     const char *parse_sign(const char *options);
     const char *parse_width(const char *options);
@@ -57,7 +57,7 @@ class format_options_t {
     bool m_zero_pad;
 
 public:
-    format_options_t() = default;
+    FormatOptions() = default;
 
     const char *parse(const char *options);
 
@@ -80,38 +80,38 @@ public:
 };
 
 template <typename T>
-class formatter_t {
+class Formatter {
 public:
-    static void format(const T &value, const format_options_t &options);
+    static void format(const T &value, const FormatOptions &options);
 };
 
 template <typename T>
-requires(__is_pointer(T)) class formatter_t<T> {
+requires(__is_pointer(T)) class Formatter<T> {
 public:
-    static void format(T value, const format_options_t &options) { formatter_t<uint64_t>::format((uint64_t) value, options); }
+    static void format(T value, const FormatOptions &options) { Formatter<uint64_t>::format((uint64_t) value, options); }
 };
 
 template <>
-class formatter_t<const char *> {
+class Formatter<const char *> {
 public:
-    static void format(const char *value, const format_options_t &options);
+    static void format(const char *value, const FormatOptions &options);
 };
 
 template <>
-class formatter_t<char *> {
+class Formatter<char *> {
 public:
-    static void format(char *value, const format_options_t &options);
+    static void format(char *value, const FormatOptions &options);
 };
 
 template <uint64_t N>
-class formatter_t<char[N]> {
+class Formatter<char[N]> {
 public:
-    static void format(const char *value, const format_options_t &options) { formatter_t<const char *>::format(value, options); }
+    static void format(const char *value, const FormatOptions &options) { Formatter<const char *>::format(value, options); }
 };
 
 template <uint64_t N>
-class formatter_t<const char (&)[N]> {
-    static void format(const char *value, const format_options_t &options) { formatter_t<const char *>::format(value, options); }
+class Formatter<const char (&)[N]> {
+    static void format(const char *value, const FormatOptions &options) { Formatter<const char *>::format(value, options); }
 };
 
 namespace detail {
@@ -119,8 +119,8 @@ namespace detail {
 inline core::lock_t log_lock;
 
 template <typename T>
-void format_arg(const T &value, const format_options_t &options) {
-    formatter_t<T>::format(value, options);
+void format_arg(const T &value, const FormatOptions &options) {
+    Formatter<T>::format(value, options);
 }
 
 template <typename... Args>
@@ -141,7 +141,7 @@ void print_format(const char *format, Args &&...args) {
                 continue;
             }
 
-            format_options_t options;
+            FormatOptions options;
 
             format = options.parse(format);
 
@@ -157,7 +157,7 @@ void print_format(const char *format, Args &&...args) {
 }
 
 template <typename... Args>
-void print_format_log_unlocked(log_level_t level, const char *file, int line, const char *format, Args &&...args) {
+void print_format_log_unlocked(LogLevel level, const char *file, int line, const char *format, Args &&...args) {
     auto current_proc = task::get_current_task();
 
     print_format("{}: {}: {}:{}: ", current_proc ? current_proc->name.data() : "kernel", level, file, line);
@@ -167,7 +167,7 @@ void print_format_log_unlocked(log_level_t level, const char *file, int line, co
 }
 
 template <typename... Args>
-void print_format_log(log_level_t level, const char *file, int line, const char *format, Args &&...args) {
+void print_format_log(LogLevel level, const char *file, int line, const char *format, Args &&...args) {
     core::lock_guard_t lock(log_lock);
 
     print_format_log_unlocked(level, file, line, format, args...);

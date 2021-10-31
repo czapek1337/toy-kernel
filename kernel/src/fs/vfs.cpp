@@ -3,7 +3,7 @@
 #include "dev_fs.h"
 #include "module_fs.h"
 
-static vfs_node_t *root_node;
+static VfsNode *root_node;
 
 static core::vector_t<core::string_t> split_path(const core::string_t &path) {
     core::vector_t<core::string_t> result;
@@ -29,7 +29,7 @@ static core::vector_t<core::string_t> split_path(const core::string_t &path) {
     return result;
 }
 
-static void iterate_node(vfs_node_t *node, int depth) {
+static void iterate_node(VfsNode *node, int depth) {
     char buffer[128];
 
     __builtin_memset(buffer, 0, sizeof(buffer));
@@ -42,17 +42,17 @@ static void iterate_node(vfs_node_t *node, int depth) {
     }
 }
 
-void vfs::init(stivale2_struct_t *boot_info) {
-    auto modules = (stivale2_struct_modules_tag_t *) query_tag(boot_info, STIVALE2_STRUCT_MODULES_TAG);
+void vfs::init(Stivale2Struct *boot_info) {
+    auto modules = (Stivale2StructModulesTag *) boot_info->query_tag(STIVALE2_STRUCT_MODULES_TAG);
 
-    root_node = new vfs_node_t;
+    root_node = new VfsNode;
     root_node->name = "/";
 
-    new dev_fs_t(new vfs_node_t);
-    new module_fs_t(new vfs_node_t, modules);
+    new DeviceFs(new VfsNode);
+    new ModuleFs(new VfsNode, modules);
 }
 
-vfs_node_t *vfs::get(vfs_node_t *parent, const core::string_t &path) {
+VfsNode *vfs::get(VfsNode *parent, const core::string_t &path) {
     parent = parent ?: root_node;
 
     auto components = split_path(path);
@@ -83,13 +83,13 @@ vfs_node_t *vfs::get(vfs_node_t *parent, const core::string_t &path) {
     return parent;
 }
 
-void vfs::mount(vfs_file_system_t *fs, vfs_node_t *parent, vfs_node_t *node) {
+void vfs::mount(VfsFileSystem *fs, VfsNode *parent, VfsNode *node) {
     append_child(parent ?: root_node, node);
 
     node->file_system = fs;
 }
 
-void vfs::append_child(vfs_node_t *parent, vfs_node_t *node) {
+void vfs::append_child(VfsNode *parent, VfsNode *node) {
     parent = parent ?: root_node;
 
     node->parent = parent;
@@ -98,7 +98,7 @@ void vfs::append_child(vfs_node_t *parent, vfs_node_t *node) {
     parent->children.push(node);
 }
 
-void vfs::remove_child(vfs_node_t *parent, vfs_node_t *node) {
+void vfs::remove_child(VfsNode *parent, VfsNode *node) {
     parent = parent ?: root_node;
 
     for (auto i = 0; i < parent->children.size(); i++) {
@@ -128,7 +128,7 @@ uint64_t vfs::open(const core::string_t &fs_path, const core::string_t &path) {
     if (!node)
         return -1;
 
-    auto file = new vfs_opened_file_t;
+    auto file = new VfsOpenedFile;
 
     file->seek = 0;
     file->file_size = 0;

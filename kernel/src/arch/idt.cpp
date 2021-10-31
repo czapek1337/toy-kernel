@@ -4,7 +4,7 @@
 #include "gdt.h"
 #include "idt.h"
 
-static core::lock_t idt_lock;
+static core::SpinLock idt_lock;
 static Idt idt;
 
 extern "C" uint64_t interrupt_vectors[256];
@@ -26,7 +26,7 @@ static IdtEntry idt_entry(uint64_t address, uint16_t selector, uint8_t ist, uint
 }
 
 void initialize_idt() {
-    core::lock_guard_t lock(idt_lock);
+    core::LockGuard lock(idt_lock);
 
     __builtin_memset(&idt, 0, sizeof(idt));
 

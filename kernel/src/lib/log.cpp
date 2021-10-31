@@ -244,7 +244,7 @@ void Formatter<char *>::format(char *value, const FormatOptions &options) {
 }
 
 template <>
-void Formatter<core::string_t>::format(const core::string_t &value, const FormatOptions &options) {
+void Formatter<core::String>::format(const core::String &value, const FormatOptions &options) {
     detail::format_arg(value.data(), options);
 }
 

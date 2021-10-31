@@ -4,7 +4,7 @@
 
 namespace core {
 
-class string_t {
+class String {
 private:
     char *m_data;
 
@@ -12,20 +12,20 @@ private:
     uint64_t m_capacity;
 
 public:
-    string_t();
-    string_t(const string_t &other);
-    string_t(string_t &&other);
+    String();
+    String(const String &other);
+    String(String &&other);
 
-    string_t &operator=(const string_t &other);
-    string_t &operator=(string_t &&other);
+    String &operator=(const String &other);
+    String &operator=(String &&other);
 
-    string_t(const char *data);
-    string_t(const char *data, uint64_t length);
+    String(const char *data);
+    String(const char *data, uint64_t length);
 
-    ~string_t();
+    ~String();
 
-    bool operator==(const string_t &other) const;
-    bool operator!=(const string_t &other) const;
+    bool operator==(const String &other) const;
+    bool operator!=(const String &other) const;
 
     void push(char ch);
     void push(const char *data);

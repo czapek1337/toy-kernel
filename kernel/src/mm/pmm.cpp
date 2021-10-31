@@ -5,7 +5,7 @@
 #include "../lib/log.h"
 #include "pmm.h"
 
-static core::lock_t pmm_lock;
+static core::SpinLock pmm_lock;
 static Bitmap pmm_bitmap;
 static uint64_t best_bet;
 
@@ -90,7 +90,7 @@ void pmm::init(Stivale2StructMemoryMapTag *mmap) {
 }
 
 uint64_t pmm::alloc(uint64_t count) {
-    core::lock_guard_t lock(pmm_lock);
+    core::LockGuard lock(pmm_lock);
 
     auto result = try_allocate_pages(count);
 
@@ -104,7 +104,7 @@ uint64_t pmm::alloc(uint64_t count) {
 }
 
 void pmm::free(uint64_t addr, uint64_t count) {
-    core::lock_guard_t lock(pmm_lock);
+    core::LockGuard lock(pmm_lock);
 
     pmm_bitmap.set_range(addr / 4096, count, true);
 }

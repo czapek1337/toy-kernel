@@ -116,7 +116,7 @@ class Formatter<const char (&)[N]> {
 
 namespace detail {
 
-inline core::lock_t log_lock;
+inline core::SpinLock log_lock;
 
 template <typename T>
 void format_arg(const T &value, const FormatOptions &options) {
@@ -168,7 +168,7 @@ void print_format_log_unlocked(LogLevel level, const char *file, int line, const
 
 template <typename... Args>
 void print_format_log(LogLevel level, const char *file, int line, const char *format, Args &&...args) {
-    core::lock_guard_t lock(log_lock);
+    core::LockGuard lock(log_lock);
 
     print_format_log_unlocked(level, file, line, format, args...);
 }

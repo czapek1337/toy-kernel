@@ -2,7 +2,7 @@
 
 #include "lock.h"
 
-bool core::lock_t::try_lock() {
+bool core::SpinLock::try_lock() {
     plugs::enter_critical_section();
 
     if (__sync_bool_compare_and_swap(&m_value, 0, 1))
@@ -13,7 +13,7 @@ bool core::lock_t::try_lock() {
     return false;
 }
 
-void core::lock_t::lock() {
+void core::SpinLock::lock() {
     while (true) {
         if (try_lock())
             break;
@@ -22,7 +22,7 @@ void core::lock_t::lock() {
     }
 }
 
-void core::lock_t::unlock() {
+void core::SpinLock::unlock() {
     __sync_bool_compare_and_swap(&m_value, 1, 0);
 
     plugs::leave_critical_section();

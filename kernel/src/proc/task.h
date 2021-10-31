@@ -22,8 +22,8 @@ struct Task {
     PageTable *pml4;
     Registers regs;
 
-    core::string_t name;
-    core::hash_map_t<uint64_t, VfsOpenedFile *> open_fds;
+    core::String name;
+    core::HashMap<uint64_t, VfsOpenedFile *> open_fds;
 
     Task();
     ~Task();

@@ -10,8 +10,8 @@
 #include "../mm/vmm.h"
 #include "sched.h"
 
-static core::lock_t scheduler_lock;
-static core::vector_t<Task *> task_queue;
+static core::SpinLock scheduler_lock;
+static core::Vector<Task *> task_queue;
 static Task *idle_task;
 
 static void kernel_idle_task() {
@@ -78,7 +78,7 @@ static Task *initialize_task(uint64_t entry, uint64_t stack_size, bool is_user) 
     return task;
 }
 
-static Task *create_basic_task(const core::string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
+static Task *create_basic_task(const core::String &name, uint64_t entry, uint64_t stack_size, bool is_user) {
     auto task = initialize_task(entry, stack_size, is_user);
 
     task->exit_code = 0;
@@ -95,14 +95,14 @@ void task::init_sched() {
     idle_task = create_basic_task("idle", (uint64_t) kernel_idle_task, kib(4), false);
 }
 
-void task::create_task(const core::string_t &name, uint64_t entry, uint64_t stack_size, bool is_user) {
-    core::lock_guard_t lock(scheduler_lock);
+void task::create_task(const core::String &name, uint64_t entry, uint64_t stack_size, bool is_user) {
+    core::LockGuard lock(scheduler_lock);
 
     task_queue.push(create_basic_task(name, entry, stack_size, is_user));
 }
 
-void task::create_task_from_elf(const core::string_t &name, Elf64 *elf, uint64_t stack_size, bool is_user) {
-    core::lock_guard_t lock(scheduler_lock);
+void task::create_task_from_elf(const core::String &name, Elf64 *elf, uint64_t stack_size, bool is_user) {
+    core::LockGuard lock(scheduler_lock);
 
     auto task = create_basic_task(name, elf->entry, stack_size, is_user);
     auto phdrs = (Elf64Phdr *) ((uint64_t) elf + elf->ph_off);
@@ -137,7 +137,7 @@ void task::create_task_from_elf(const core::string_t &name, Elf64 *elf, uint64_t
 }
 
 Task *task::reschedule(Registers *regs) {
-    core::lock_guard_t lock(scheduler_lock);
+    core::LockGuard lock(scheduler_lock);
 
     auto current_cpu = arch::get_current_cpu();
     auto current_task = current_cpu->current_task;

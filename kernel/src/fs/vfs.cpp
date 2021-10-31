@@ -1,12 +1,12 @@
 #include "vfs.h"
 #include "../lib/log.h"
-#include "dev_fs.h"
+#include "device_fs.h"
 #include "module_fs.h"
 
 static VfsNode *root_node;
 
-static core::vector_t<core::string_t> split_path(const core::string_t &path) {
-    core::vector_t<core::string_t> result;
+static core::Vector<core::String> split_path(const core::String &path) {
+    core::Vector<core::String> result;
 
     auto component_start = 0;
 
@@ -15,7 +15,7 @@ static core::vector_t<core::string_t> split_path(const core::string_t &path) {
             auto length = i - component_start;
 
             if (length != 0)
-                result.push(core::string_t(path.data() + component_start, length));
+                result.push(core::String(path.data() + component_start, length));
 
             component_start = i + 1;
         }
@@ -24,7 +24,7 @@ static core::vector_t<core::string_t> split_path(const core::string_t &path) {
     auto rest_length = path.size() - component_start;
 
     if (rest_length > 0)
-        result.push(core::string_t(path.data() + component_start, rest_length));
+        result.push(core::String(path.data() + component_start, rest_length));
 
     return result;
 }
@@ -52,7 +52,7 @@ void vfs::init(Stivale2Struct *boot_info) {
     new ModuleFs(new VfsNode, modules);
 }
 
-VfsNode *vfs::get(VfsNode *parent, const core::string_t &path) {
+VfsNode *vfs::get(VfsNode *parent, const core::String &path) {
     parent = parent ?: root_node;
 
     auto components = split_path(path);
@@ -117,7 +117,7 @@ void vfs::remove_child(VfsNode *parent, VfsNode *node) {
     log_warn("Could not delete a VFS node '{}' in parent '{}'", node->name, parent->name);
 }
 
-uint64_t vfs::open(const core::string_t &fs_path, const core::string_t &path) {
+uint64_t vfs::open(const core::String &fs_path, const core::String &path) {
     auto parent = get(nullptr, fs_path);
 
     if (!parent)

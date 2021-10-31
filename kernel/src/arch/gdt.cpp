@@ -6,7 +6,7 @@
 #include "cpu.h"
 #include "gdt.h"
 
-static core::lock_t gdt_lock;
+static core::SpinLock gdt_lock;
 static Gdt gdt;
 
 extern "C" void update_gdt(const GdtDescriptor &desc);
@@ -41,7 +41,7 @@ static GdtExtendedEntry gdt_tss_entry(uint64_t address) {
 }
 
 void initialize_gdt() {
-    core::lock_guard_t lock(gdt_lock);
+    core::LockGuard lock(gdt_lock);
 
     __builtin_memset(&gdt, 0, sizeof(gdt));
 
@@ -57,7 +57,7 @@ void initialize_gdt() {
 }
 
 void initialize_tss() {
-    core::lock_guard_t lock(gdt_lock);
+    core::LockGuard lock(gdt_lock);
 
     auto current_cpu = arch::get_current_cpu();
 

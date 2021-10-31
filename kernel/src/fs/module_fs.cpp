@@ -23,7 +23,7 @@ ModuleFs::ModuleFs(VfsNode *node, Stivale2StructModulesTag *modules) {
     }
 }
 
-uint64_t ModuleFs::open(VfsOpenedFile *file, const core::string_t &path) {
+uint64_t ModuleFs::open(VfsOpenedFile *file, const core::String &path) {
     auto module_node = (ModuleFsNode *) file->node;
 
     file->seek = 0;

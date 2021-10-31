@@ -5,7 +5,7 @@
 namespace core {
 
 template <typename T>
-class vector_t {
+class Vector {
 private:
     T *m_values;
 
@@ -13,13 +13,13 @@ private:
     uint64_t m_count;
 
 public:
-    vector_t(uint64_t capacity = 0) {
+    Vector(uint64_t capacity = 0) {
         m_values = nullptr;
         m_capacity = capacity;
         m_count = 0;
     }
 
-    ~vector_t() {
+    ~Vector() {
         if (m_values)
             delete[] m_values;
     }

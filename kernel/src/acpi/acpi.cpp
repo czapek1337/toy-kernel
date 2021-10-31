@@ -5,7 +5,7 @@
 #include "../mm/vmm.h"
 #include "acpi.h"
 
-static core::vector_t<SdtHeader *> tables;
+static core::Vector<SdtHeader *> tables;
 
 static void handle_table(SdtHeader *header) {
     log_debug("Found ACPI table '{4}' at {#016x}", (const char *) header->signature, header);

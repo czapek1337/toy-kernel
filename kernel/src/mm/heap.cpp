@@ -17,7 +17,7 @@ struct HeapBlock : LinkedListNode<HeapBlock> {
 constexpr auto heap_base_offset = gib(8);
 constexpr auto heap_initial_size = kib(64);
 
-static core::lock_t heap_lock;
+static core::SpinLock heap_lock;
 static HeapBlock heap_root;
 
 static HeapBlock *create_block(uint64_t size) {
@@ -49,7 +49,7 @@ void heap::init() {
 uint64_t heap::alloc(uint64_t size) {
     assert_msg(size > 0, "Tried make an allocation of size 0");
 
-    // Acquire the heap lock, we do it manually here, instead of using the lock_guard_t
+    // Acquire the heap lock, we do it manually here, instead of using the LockGuard
     // construct to avoid recursive locking in case when we need to recursively call
     // into alloc after we allocate some more blocks
     heap_lock.lock();
@@ -97,7 +97,7 @@ void heap::free(uint64_t addr) {
     assert_msg(addr != 0, "Tried freeing a null pointer");
 
     // Acquire the heap lock
-    core::lock_guard_t lock(heap_lock);
+    core::LockGuard lock(heap_lock);
 
     // Lets figure out which block this allocation belongs to
     auto block = (HeapBlock *) (addr - sizeof(HeapBlock));

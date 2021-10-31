@@ -7,7 +7,7 @@ DeviceFs::DeviceFs(VfsNode *node) {
     vfs::mount(this, nullptr, node);
 }
 
-uint64_t DeviceFs::open(VfsOpenedFile *file, const core::string_t &path) {
+uint64_t DeviceFs::open(VfsOpenedFile *file, const core::String &path) {
     auto udev_node = (DeviceFsNode *) file->node;
 
     udev_node->init(file);

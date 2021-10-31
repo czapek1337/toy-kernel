@@ -5,13 +5,13 @@
 namespace core {
 
 template <typename T>
-struct hashable_t {
+struct Hashable {
     static uint64_t hash(const T &value);
 };
 
 #define MAKE_INT_HASH(type)                                                                                                                \
     template <>                                                                                                                            \
-    struct hashable_t<type> {                                                                                                              \
+    struct Hashable<type> {                                                                                                              \
         static uint64_t hash(const type &value) { return (uint64_t) value; }                                                               \
     };
 

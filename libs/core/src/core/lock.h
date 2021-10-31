@@ -5,12 +5,12 @@
 namespace core {
 
 template <typename T>
-concept basic_lockable = requires(T &lock) {
+concept BasicLockable = requires(T &lock) {
     {lock.lock()};
     {lock.unlock()};
 };
 
-class lock_t {
+class SpinLock {
 private:
     uint8_t m_value;
 
@@ -21,14 +21,14 @@ public:
     void unlock();
 };
 
-template <basic_lockable T>
-class lock_guard_t {
+template <BasicLockable T>
+class LockGuard {
 private:
     T &m_lock;
 
 public:
-    lock_guard_t(T &lock) : m_lock(lock) { m_lock.lock(); }
-    ~lock_guard_t() { m_lock.unlock(); }
+    LockGuard(T &lock) : m_lock(lock) { m_lock.lock(); }
+    ~LockGuard() { m_lock.unlock(); }
 };
 
 } // namespace core

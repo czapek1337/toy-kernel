@@ -5,7 +5,7 @@
 #include "pmm.h"
 #include "vmm.h"
 
-static core::lock_t vmm_lock;
+static core::SpinLock vmm_lock;
 
 static PageTable *get_page_table(PageTable *root, uint64_t index, bool create) {
     auto entry = &root->get(index);
@@ -76,7 +76,7 @@ void PageTable::map(uint64_t virt_addr, uint64_t phys_addr, uint64_t size, uint6
     assert_msg((phys_addr % 0x1000) == 0, "Physical address must be page aligned");
     assert_msg((size % 0x1000) == 0, "Size must be expressed in pages");
 
-    core::lock_guard_t lock(vmm_lock);
+    core::LockGuard lock(vmm_lock);
 
     for (auto i = 0ul; i < size / 4096; i++) {
         map_page(this, virt_addr + i * 4096, phys_addr + i * 4096, flags);
@@ -87,7 +87,7 @@ void PageTable::unmap(uint64_t virt_addr, uint64_t size) {
     assert_msg((virt_addr % 0x1000) == 0, "Virtual address must be page aligned");
     assert_msg((size % 0x1000) == 0, "Size must be expressed in pages");
 
-    core::lock_guard_t lock(vmm_lock);
+    core::LockGuard lock(vmm_lock);
 
     for (auto i = 0ul; i < size / 4096; i++) {
         unmap_page(this, virt_addr + i * 4096);
@@ -129,7 +129,7 @@ void vmm::destroy_pml4(PageTable *pml4) {
 }
 
 void vmm::switch_to(PageTable *pml4) {
-    core::lock_guard_t lock(vmm_lock);
+    core::LockGuard lock(vmm_lock);
 
     uint64_t old_plm4;
 
@@ -138,7 +138,7 @@ void vmm::switch_to(PageTable *pml4) {
 }
 
 PageTable *vmm::create_pml4() {
-    core::lock_guard_t lock(vmm_lock);
+    core::LockGuard lock(vmm_lock);
 
     auto pt_phys = pmm::alloc(1);
     auto pt = (PageTable *) phys_to_io(pt_phys);

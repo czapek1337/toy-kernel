@@ -83,7 +83,7 @@ uint64_t heap::alloc(uint64_t size) {
     }
 
     // Allocate a fresh block of heap memory for the next run
-    auto new_block = create_block(size);
+    auto new_block = create_block(size + sizeof(HeapBlock));
 
     new_block->insert_front(&heap_root);
 

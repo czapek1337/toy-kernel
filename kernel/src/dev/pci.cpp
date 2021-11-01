@@ -104,7 +104,7 @@ static void handle_pci_device(uint64_t bus, uint64_t device, uint64_t function) 
     log_debug("Found device {#04x}:{#04x} in slot {}.{} on bus {}, class={}, subclass={}", header.get_vendor_id(), header.get_device_id(),
               device, function, bus, header.get_class_code(), header.get_subclass());
 
-    if (header.get_header_type() & 0x80) {
+    if (function == 0 && header.get_header_type() & 0x80) {
         for (auto function = 1; function < 8; function++) {
             handle_pci_device(bus, device, function);
         }

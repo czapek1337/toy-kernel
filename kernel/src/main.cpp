@@ -9,6 +9,7 @@
 #include "fs/vfs.h"
 #include "intr/apic.h"
 #include "lib/addr.h"
+#include "lib/console.h"
 #include "lib/log.h"
 #include "mm/heap.h"
 #include "mm/pmm.h"
@@ -22,6 +23,7 @@ extern "C" void kernel_start(Stivale2Struct *boot_info) {
     auto rsdp = (Stivale2StructRsdpTag *) boot_info->query_tag(STIVALE2_STRUCT_RSDP_TAG);
     auto framebuffer = (Stivale2StructFramebufferTag *) boot_info->query_tag(STIVALE2_STRUCT_FRAMEBUFFER_TAG);
 
+    console::init(framebuffer);
     arch::init_bsp();
     intr::retain();
 

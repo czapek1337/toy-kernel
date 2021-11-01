@@ -1,4 +1,5 @@
 #include "log.h"
+#include "console.h"
 
 static void print_integer(uint64_t value, const FormatOptions &options) {
     char buffer[72] = {0};
@@ -186,6 +187,8 @@ void Formatter<LogLevel>::format(const LogLevel &value, const FormatOptions &opt
 template <>
 void Formatter<char>::format(const char &value, [[maybe_unused]] const FormatOptions &options) {
     arch::io_outb(0x3f8, value);
+
+    console::write(value);
 }
 
 template <>

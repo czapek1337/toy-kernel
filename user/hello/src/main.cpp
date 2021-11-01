@@ -2,6 +2,7 @@
 
 extern "C" int user_start() {
     system::trace("Hello, world!");
+
     system::exit(0);
 
     while (true) {

@@ -95,24 +95,26 @@ void PciHeader::become_master() {
     // TODO: Implement
 }
 
-static void handle_pci_device(uint64_t bus, uint64_t device) {
-    auto header = PciHeader(bus, device, 0);
+static void handle_pci_device(uint64_t bus, uint64_t device, uint64_t function) {
+    auto header = PciHeader(bus, device, function);
 
     if (header.get_vendor_id() == 0xffff)
         return;
 
-    log_debug("Found device {#04x}:{#04x} in slot {} on bus {}, class={}, subclass={}", header.get_vendor_id(), header.get_device_id(),
-              device, bus, header.get_class_code(), header.get_subclass());
-}
+    log_debug("Found device {#04x}:{#04x} in slot {}.{} on bus {}, class={}, subclass={}", header.get_vendor_id(), header.get_device_id(),
+              device, function, bus, header.get_class_code(), header.get_subclass());
 
-static void scan_pci_bus(uint64_t bus) {
-    for (auto device = 0; device < 32; device++) {
-        handle_pci_device(bus, device);
+    if (header.get_header_type() & 0x80) {
+        for (auto function = 1; function < 8; function++) {
+            handle_pci_device(bus, device, function);
+        }
     }
 }
 
 void pci::scan() {
-    for (auto bus = 0; bus < 255; bus++) {
-        scan_pci_bus(bus);
+    for (auto bus = 0; bus < 256; bus++) {
+        for (auto device = 0; device < 32; device++) {
+            handle_pci_device(bus, device, 0);
+        }
     }
 }

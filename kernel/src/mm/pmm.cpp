@@ -49,7 +49,7 @@ void pmm::init(Stivale2StructMemoryMapTag *mmap) {
     for (auto i = 0; i < mmap->count; i++) {
         auto entry = &mmap->mmap[i];
 
-        log_info(" - base={#016x}, size={#08x}, type={}", entry->base, entry->size, mmap_type_to_string(entry->type));
+        log_info("  base={#016x}, size={#08x}, type={}", entry->base, entry->size, mmap_type_to_string(entry->type));
     }
 
     auto highest_addr = 0ul;

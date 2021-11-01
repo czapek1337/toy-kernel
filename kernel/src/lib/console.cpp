@@ -293,15 +293,13 @@ static void plot_char(uint64_t x, uint64_t y, char ch) {
             auto dst = backbuffer_data + (y * 16 + i) * pitch + (x * 8 + j) * 4;
 
             if (vga_font_8x16[ch][i] & (1 << (7 - j))) {
-                dst[0] = 230;
-                dst[1] = 230;
-                dst[2] = 230;
-                dst[3] = 230;
+                dst[0] = 160;
+                dst[1] = 160;
+                dst[2] = 160;
             } else {
-                dst[0] = 12;
-                dst[1] = 12;
-                dst[2] = 12;
-                dst[3] = 12;
+                dst[0] = 0;
+                dst[1] = 0;
+                dst[2] = 0;
             }
         }
     }
@@ -318,8 +316,8 @@ void console::init(Stivale2StructFramebufferTag *framebuffer) {
     framebuffer_data = (uint8_t *) framebuffer->addr;
     backbuffer_data = (uint8_t *) heap::alloc(height * pitch);
 
-    __builtin_memset(framebuffer_data, 12, height * pitch);
-    __builtin_memset(backbuffer_data, 12, height * pitch);
+    __builtin_memset(framebuffer_data, 0, height * pitch);
+    __builtin_memset(backbuffer_data, 0, height * pitch);
 }
 
 void console::write(char ch) {

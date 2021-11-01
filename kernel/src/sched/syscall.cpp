@@ -37,9 +37,10 @@ extern "C" uint64_t syscall_handler(Registers *regs) {
     if (regs->rdi == SYSCALL_TRACE) {
         log_info("{}", (const char *) regs->rbx);
     } else if (regs->rdi == SYSCALL_EXIT) {
-        task::get_current_task()->kill(regs->rbx);
+        // TODO: Implement
+        // sched::get_current_thread()->kill(regs->rbx);
     } else if (regs->rdi == SYSCALL_YIELD) {
-        task::reschedule(regs);
+        sched::reschedule(regs);
     } else if (regs->rdi == SYSCALL_OPEN) {
         return vfs::open("/", (const char *) regs->rbx);
     } else if (regs->rdi == SYSCALL_CLOSE) {

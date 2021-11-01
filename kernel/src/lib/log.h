@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #include "../arch/asm.h"
-#include "../proc/sched.h"
+#include "../sched/sched.h"
 
 enum LogLevel : uint8_t {
     LOG_LEVEL_DEBUG,
@@ -158,7 +158,8 @@ void print_format(const char *format, Args &&...args) {
 
 template <typename... Args>
 void print_format_log_unlocked(LogLevel level, const char *file, int line, const char *format, Args &&...args) {
-    auto current_proc = task::get_current_task();
+    auto current_thread = sched::get_current_thread();
+    auto current_proc = current_thread ? current_thread->process : nullptr;
 
     print_format("{}: {}: {}:{}: ", current_proc ? current_proc->name.data() : "kernel", level, file, line);
     print_format(format, args...);

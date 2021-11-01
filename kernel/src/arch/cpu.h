@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "../proc/task.h"
+#include "../sched/process.h"
 #include "gdt.h"
 
 struct ProcessorState {
@@ -10,8 +10,7 @@ struct ProcessorState {
     uint64_t lapic_id;
 
     Tss tss;
-
-    Task *current_task;
+    Thread *current_thread;
 
     bool is_present;
     bool retain_enable;

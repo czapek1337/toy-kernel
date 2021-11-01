@@ -138,8 +138,8 @@ uint64_t vfs::open(const core::String &fs_path, const core::String &path) {
 }
 
 uint64_t vfs::close(uint64_t fd) {
-    auto current_task = task::get_current_task();
-    auto file = current_task->open_fds.lookup(fd);
+    auto current_task = sched::get_current_thread();
+    auto file = current_task->process->file_descriptors.lookup(fd);
 
     if (!file)
         return -1;
@@ -148,8 +148,8 @@ uint64_t vfs::close(uint64_t fd) {
 }
 
 uint64_t vfs::read(uint64_t fd, uint8_t *buffer, uint64_t size) {
-    auto current_task = task::get_current_task();
-    auto file = current_task->open_fds.lookup(fd);
+    auto current_task = sched::get_current_thread();
+    auto file = current_task->process->file_descriptors.lookup(fd);
 
     if (!file)
         return -1;
@@ -158,8 +158,8 @@ uint64_t vfs::read(uint64_t fd, uint8_t *buffer, uint64_t size) {
 }
 
 uint64_t vfs::write(uint64_t fd, const uint8_t *buffer, uint64_t size) {
-    auto current_task = task::get_current_task();
-    auto file = current_task->open_fds.lookup(fd);
+    auto current_task = sched::get_current_thread();
+    auto file = current_task->process->file_descriptors.lookup(fd);
 
     if (!file)
         return -1;

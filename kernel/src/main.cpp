@@ -14,8 +14,8 @@
 #include "mm/heap.h"
 #include "mm/pmm.h"
 #include "mm/vmm.h"
-#include "proc/sched.h"
-#include "proc/syscall.h"
+#include "sched/sched.h"
+#include "sched/syscall.h"
 
 extern "C" void kernel_start(Stivale2Struct *boot_info) {
     auto mmap = (Stivale2StructMemoryMapTag *) boot_info->query_tag(STIVALE2_STRUCT_MMAP_TAG);
@@ -45,12 +45,17 @@ extern "C" void kernel_start(Stivale2Struct *boot_info) {
     vfs::init(boot_info);
     dev::init_udev(framebuffer);
     pci::scan();
-    task::init_sched();
+    sched::init();
 
     // Create a new user task from passed in modules
     auto hello_elf = boot_info->query_module("hello.elf");
 
-    task::create_task_from_elf("hello", (Elf64 *) hello_elf->base, kib(4), true);
+    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
+    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
+    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
+    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
+    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
+    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
 
     // Start scheduling by enabling interrupts
     intr::release();

@@ -3,7 +3,7 @@
 #include "../arch/cpu.h"
 #include "../arch/gdt.h"
 #include "../lib/log.h"
-#include "../proc/sched.h"
+#include "../sched/sched.h"
 #include "apic.h"
 
 static constexpr const char *exception_messages[] = {
@@ -147,8 +147,7 @@ extern "C" void interrupt_handler(Registers *regs) {
         interrupt_error_handler(regs);
     } else {
         if (regs->isr_number == 32) {
-            auto current = task::get_current_task();
-            auto next = task::reschedule(regs);
+            sched::reschedule(regs);
         } else {
             log_info_unlocked("Received an interrupt request #{}", regs->isr_number);
         }

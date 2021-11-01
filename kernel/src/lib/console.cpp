@@ -1,6 +1,6 @@
 #include "console.h"
-#include "../arch/asm.h"
 #include "../ds/ring_buffer.h"
+#include "../mm/heap.h"
 
 static uint8_t vga_font_8x16[256][16] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
@@ -261,54 +261,53 @@ static uint8_t vga_font_8x16[256][16] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 };
 
-static RingBuffer<char, 1024> buffer;
+static RingBuffer<char, 8192> buffer;
 
 static uint8_t *framebuffer_data = nullptr;
+static uint8_t *backbuffer_data = nullptr;
+
 static uint64_t cursor_x = 0;
 static uint64_t cursor_y = 0;
+
 static uint64_t width = 0;
 static uint64_t height = 0;
 static uint64_t pitch = 0;
+
 static uint64_t width_in_chars = 0;
 static uint64_t height_in_chars = 0;
 
 static void scroll() {
     for (auto i = 1; i < height_in_chars; i++) {
-        for (auto j = 0; j < 16; j++) {
-            auto src_line = framebuffer_data + (i * 16 + j) * pitch;
-            auto dst_line = framebuffer_data + ((i - 1) * 16 + j) * pitch;
+        auto src_line = backbuffer_data + (i * 16) * pitch;
+        auto dst_line = backbuffer_data + ((i - 1) * 16) * pitch;
 
-            __builtin_memcpy(dst_line, src_line, pitch);
-        }
+        __builtin_memcpy(dst_line, src_line, pitch * 16);
     }
 
-    for (auto i = 0; i < 16; i++) {
-        __builtin_memset(framebuffer_data + ((height_in_chars - 1) * 16 + i) * pitch, 0, pitch);
-    }
+    __builtin_memset(backbuffer_data + ((height_in_chars - 1) * 16) * pitch, 0, pitch * 16);
 }
 
 static void plot_char(uint64_t x, uint64_t y, char ch) {
     for (auto i = 0; i < 16; i++) {
         for (auto j = 0; j < 8; j++) {
-            auto dst = framebuffer_data + (y * 16 + i) * pitch + (x * 8 + j) * 4;
+            auto dst = backbuffer_data + (y * 16 + i) * pitch + (x * 8 + j) * 4;
 
             if (vga_font_8x16[ch][i] & (1 << (7 - j))) {
-                dst[0] = 0xbb;
-                dst[1] = 0xbb;
-                dst[2] = 0xbb;
-                dst[3] = 0xbb;
+                dst[0] = 230;
+                dst[1] = 230;
+                dst[2] = 230;
+                dst[3] = 230;
             } else {
-                dst[0] = 0x0;
-                dst[1] = 0x0;
-                dst[2] = 0x0;
-                dst[3] = 0x0;
+                dst[0] = 12;
+                dst[1] = 12;
+                dst[2] = 12;
+                dst[3] = 12;
             }
         }
     }
 }
 
 void console::init(Stivale2StructFramebufferTag *framebuffer) {
-    framebuffer_data = (uint8_t *) framebuffer->addr;
     width = framebuffer->width;
     height = framebuffer->height;
     pitch = framebuffer->pitch;
@@ -316,13 +315,17 @@ void console::init(Stivale2StructFramebufferTag *framebuffer) {
     width_in_chars = width / 8;
     height_in_chars = height / 16;
 
-    __builtin_memset(framebuffer_data, 0, height * pitch);
+    framebuffer_data = (uint8_t *) framebuffer->addr;
+    backbuffer_data = (uint8_t *) heap::alloc(height * pitch);
+
+    __builtin_memset(framebuffer_data, 12, height * pitch);
+    __builtin_memset(backbuffer_data, 12, height * pitch);
 }
 
 void console::write(char ch) {
     buffer.push(ch);
 
-    if (!framebuffer_data)
+    if (!backbuffer_data)
         return;
 
     if (ch != '\n')
@@ -359,4 +362,6 @@ void console::write(char ch) {
             }
         }
     }
+
+    __builtin_memcpy(framebuffer_data, backbuffer_data, height * pitch);
 }

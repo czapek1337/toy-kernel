@@ -23,7 +23,6 @@ extern "C" void kernel_start(Stivale2Struct *boot_info) {
     auto rsdp = (Stivale2StructRsdpTag *) boot_info->query_tag(STIVALE2_STRUCT_RSDP_TAG);
     auto framebuffer = (Stivale2StructFramebufferTag *) boot_info->query_tag(STIVALE2_STRUCT_FRAMEBUFFER_TAG);
 
-    console::init(framebuffer);
     arch::init_bsp();
     intr::retain();
 
@@ -38,6 +37,7 @@ extern "C" void kernel_start(Stivale2Struct *boot_info) {
     initialize_tss();
 
     heap::init();
+    console::init(framebuffer);
     acpi::init(rsdp);
     hpet::init();
     apic::init();

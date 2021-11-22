@@ -34,25 +34,38 @@ extern "C" uint64_t syscall_handler(Registers *regs) {
     // R8  - fourth argument
     // R9  - fifth argument
 
-    if (regs->rdi == SYSCALL_TRACE) {
-        log_info("{}", (const char *) regs->rbx);
-    } else if (regs->rdi == SYSCALL_EXIT) {
-        // TODO: Implement
-        // sched::get_current_thread()->kill(regs->rbx);
-    } else if (regs->rdi == SYSCALL_YIELD) {
-        sched::reschedule(regs);
-    } else if (regs->rdi == SYSCALL_OPEN) {
-        return vfs::open("/", (const char *) regs->rbx);
-    } else if (regs->rdi == SYSCALL_CLOSE) {
-        return vfs::close(regs->rbx);
-    } else if (regs->rdi == SYSCALL_READ) {
-        return vfs::read(regs->rbx, (uint8_t *) regs->rdx, regs->rsi);
-    } else if (regs->rdi == SYSCALL_WRITE) {
-        return vfs::write(regs->rbx, (const uint8_t *) regs->rdx, regs->rsi);
-    } else {
-        log_error("Unknown syscall with ID {#016x}", regs->rdi);
+        switch (regs->rdi) {
+            case SYSCALL_TRACE:
+                log_info("{}", (const char *) regs->rbx);
+                break;
 
-        return -1;
+            case SYSCALL_EXIT:
+                // TODO: Implement
+                // sched::get_current_thread()->kill(regs->rbx);
+                break;
+
+            case SYSCALL_YIELD:
+                sched::reschedule(regs);
+                break;
+
+            case SYSCALL_OPEN:
+                return vfs::open("/", (const char *) regs->rbx);
+                break;
+
+            case SYSCALL_CLOSE:
+                return vfs::close(regs->rbx);
+                break;
+
+            case SYSCALL_READ:
+                return vfs::read(regs->rbx, (uint8_t *) regs->rdx, regs->rsi);
+                break;
+
+            case SYSCALL_WRITE:
+                return vfs::write(regs->rbx, (const uint8_t *) regs->rdx, regs->rsi);
+                break;
+
+            default: log_error("Unknown syscall with ID {#016x}", regs->rdi);
+            return -1;
     }
 
     return 0;

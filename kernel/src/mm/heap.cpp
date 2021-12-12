@@ -150,6 +150,14 @@ void operator delete(void *ptr) {
     heap::free((uint64_t) ptr);
 }
 
+void operator delete(void *ptr, [[maybe_unused]] uint64_t size) {
+    heap::free((uint64_t) ptr);
+}
+
 void operator delete[](void *ptr) {
+    heap::free((uint64_t) ptr);
+}
+
+void operator delete[](void *ptr, [[maybe_unused]] uint64_t size) {
     heap::free((uint64_t) ptr);
 }

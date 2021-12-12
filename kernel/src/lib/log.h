@@ -5,6 +5,7 @@
 #endif
 
 #include <core/lock.h>
+#include <core/type_traits.h>
 #include <stdint.h>
 
 #include "../arch/asm.h"
@@ -61,22 +62,50 @@ public:
 
     const char *parse(const char *options);
 
-    uint8_t get_fill_char() const { return m_fill_char; }
-    uint8_t get_alignment() const { return m_alignment; }
-    uint8_t get_sign() const { return m_sign; }
-    uint8_t get_width() const { return m_width; }
-    uint8_t get_repr() const { return m_repr; }
+    uint8_t get_fill_char() const {
+        return m_fill_char;
+    }
+    uint8_t get_alignment() const {
+        return m_alignment;
+    }
+    uint8_t get_sign() const {
+        return m_sign;
+    }
+    uint8_t get_width() const {
+        return m_width;
+    }
+    uint8_t get_repr() const {
+        return m_repr;
+    }
 
-    bool get_alternate() const { return m_alternate; }
-    bool get_zero_pad() const { return m_zero_pad; }
+    bool get_alternate() const {
+        return m_alternate;
+    }
+    bool get_zero_pad() const {
+        return m_zero_pad;
+    }
 
-    void set_fill_char(uint8_t fill_char) { m_fill_char = fill_char; }
-    void set_alignment(uint8_t alignment) { m_alignment = alignment; }
-    void set_sign(uint8_t sign) { m_sign = sign; }
-    void set_width(uint8_t width) { m_width = width; }
-    void set_repr(uint8_t repr) { m_repr = repr; }
-    void set_alternate(bool alternate) { m_alternate = alternate; }
-    void set_zero_pad(bool zero_pad) { m_zero_pad = zero_pad; }
+    void set_fill_char(uint8_t fill_char) {
+        m_fill_char = fill_char;
+    }
+    void set_alignment(uint8_t alignment) {
+        m_alignment = alignment;
+    }
+    void set_sign(uint8_t sign) {
+        m_sign = sign;
+    }
+    void set_width(uint8_t width) {
+        m_width = width;
+    }
+    void set_repr(uint8_t repr) {
+        m_repr = repr;
+    }
+    void set_alternate(bool alternate) {
+        m_alternate = alternate;
+    }
+    void set_zero_pad(bool zero_pad) {
+        m_zero_pad = zero_pad;
+    }
 };
 
 template <typename T>
@@ -86,9 +115,11 @@ public:
 };
 
 template <typename T>
-requires(__is_pointer(T)) class Formatter<T> {
+requires(IsPointer<T>) class Formatter<T> {
 public:
-    static void format(T value, const FormatOptions &options) { Formatter<uint64_t>::format((uint64_t) value, options); }
+    static void format(T value, const FormatOptions &options) {
+        Formatter<uint64_t>::format((uint64_t) value, options);
+    }
 };
 
 template <>
@@ -106,12 +137,16 @@ public:
 template <uint64_t N>
 class Formatter<char[N]> {
 public:
-    static void format(const char *value, const FormatOptions &options) { Formatter<const char *>::format(value, options); }
+    static void format(const char *value, const FormatOptions &options) {
+        Formatter<const char *>::format(value, options);
+    }
 };
 
 template <uint64_t N>
 class Formatter<const char (&)[N]> {
-    static void format(const char *value, const FormatOptions &options) { Formatter<const char *>::format(value, options); }
+    static void format(const char *value, const FormatOptions &options) {
+        Formatter<const char *>::format(value, options);
+    }
 };
 
 namespace detail {

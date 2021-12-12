@@ -27,14 +27,10 @@ void syscall::set_gs_base(uint64_t user_gs) {
 }
 
 extern "C" uint64_t syscall_handler(Registers *regs) {
-    // RDI - syscall ID
-    // RBX - first argument
-    // RDX - second argument
-    // RSI - third argument
-    // R8  - fourth argument
-    // R9  - fifth argument
+    // syscall number: rax
+    // arguments: rbx, rdx, rsi, r8, r9
 
-    switch (regs->rdi) {
+    switch (regs->rax) {
     case SYSCALL_TRACE:
         log_info("{}", (const char *) regs->rbx);
         break;
@@ -54,7 +50,7 @@ extern "C" uint64_t syscall_handler(Registers *regs) {
     case SYSCALL_WRITE:
         return vfs::write(regs->rbx, (const uint8_t *) regs->rdx, regs->rsi);
     default:
-        log_error("Unknown syscall with ID {#016x}", regs->rdi);
+        log_error("Unknown syscall with ID {#016x}", regs->rax);
         return -1;
     }
 

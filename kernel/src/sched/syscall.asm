@@ -61,6 +61,7 @@ syscall_entry:
     call syscall_handler
 
     pop_all
+    add rsp, 8 ; Compensate for not popping rax
 
     mov rsp, [gs:0x18]      ; Restore the user stack
     mov byte [gs:0x20], 0x0 ; Set in_syscall to false

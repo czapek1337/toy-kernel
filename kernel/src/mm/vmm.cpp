@@ -131,10 +131,7 @@ void vmm::destroy_pml4(PageTable *pml4) {
 void vmm::switch_to(PageTable *pml4) {
     core::LockGuard lock(vmm_lock);
 
-    uint64_t old_plm4;
-
-    asm volatile("mov %%cr3, %0" : "=r"(old_plm4));
-    asm volatile("mov %0, %%cr3" : : "r"(io_to_phys((uint64_t) pml4)));
+    asm("mov %0, %%cr3" : : "r"(io_to_phys((uint64_t) pml4)));
 }
 
 PageTable *vmm::create_pml4() {

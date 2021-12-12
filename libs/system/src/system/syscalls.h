@@ -12,12 +12,6 @@ enum SyscallNumber {
     SYSCALL_WRITE,
 };
 
-namespace detail {
-
-uint64_t make_syscall(uint64_t id, uint64_t arg1 = 0, uint64_t arg2 = 0, uint64_t arg3 = 0, uint64_t arg4 = 0, uint64_t arg5 = 0);
-
-}
-
 namespace system {
 
 void trace(const char *message);

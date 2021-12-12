@@ -100,8 +100,6 @@ void vmm::init(Stivale2StructPmrsTag *pmrs) {
 
     __builtin_memset(pt, 0, sizeof(PageTable));
 
-    log_info("The new kernel page table is allocated at {#016x}", pt_phys);
-
     pt->map(phys_to_io(0), 0, gib(4), PAGE_TABLE_ENTRY_PRESENT | PAGE_TABLE_ENTRY_WRITE);
 
     for (auto i = 0; i < pmrs->count; i++) {
@@ -120,8 +118,6 @@ void vmm::init(Stivale2StructPmrsTag *pmrs) {
     kernel_pml4 = pt;
 
     asm("mov %0, %%cr3" : : "r"(pt_phys));
-
-    log_info("Successfully switched to the new kernel page table");
 }
 
 void vmm::destroy_pml4(PageTable *pml4) {

@@ -35,6 +35,4 @@ void initialize_idt() {
     }
 
     update_idt({.limit = sizeof(Idt) - 1, .base = (uint64_t) &idt});
-
-    log_info("Successfully loaded the IDT");
 }

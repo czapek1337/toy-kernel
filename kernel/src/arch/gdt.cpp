@@ -52,8 +52,6 @@ void initialize_gdt() {
     gdt.entries[5] = gdt_entry(0b11111000, 0b00100000);
 
     update_gdt({.limit = sizeof(Gdt) - 1, .base = (uint64_t) &gdt});
-
-    log_info("Successfully loaded the GDT");
 }
 
 void initialize_tss() {
@@ -64,6 +62,4 @@ void initialize_tss() {
     gdt.tss_entry = gdt_tss_entry((uint64_t) &current_cpu->tss);
 
     update_tss();
-
-    log_info("Successfully loaded the TSS for CPU #{}", current_cpu->ap_id);
 }

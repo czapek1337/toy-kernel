@@ -16,17 +16,10 @@ inline static void apic_write(uint32_t reg, uint32_t val) {
 }
 
 void apic::init() {
-    auto madt = (MadtHeader *) acpi::find_table("APIC");
+    apic_base_addr = Msr::apic().read() & ~0xfff;
 
-    if (!madt) {
-        apic_base_addr = Msr::apic().read();
-
-        log_warn("MADT table is not present on the system, defaulting to APIC MSR ({#016x})", apic_base_addr);
-    } else {
-        apic_base_addr = madt->lapic_address;
-
+    if (apic_base_addr != 0xfee00000)
         log_info("APIC base address is {#016x}", apic_base_addr);
-    }
 
     // enable APIC by settings the SPIV register
     apic_write(LAPIC_REG_SPURIOUS, 0x1ff);

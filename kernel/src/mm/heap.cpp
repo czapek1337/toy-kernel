@@ -42,8 +42,6 @@ void heap::init() {
     auto new_block = create_block(heap_initial_size);
 
     new_block->insert_front(&heap_root);
-
-    log_info("Successfully initialized the heap with {}KiB of memory", heap_initial_size / kib(1));
 }
 
 uint64_t heap::alloc(uint64_t size) {

@@ -23,8 +23,10 @@ void hpet::init() {
     hpet_base = hpet->address;
     hpet_clock = hpet_read(HPET_REG_GENERAL_CAPS_AND_ID) >> 32;
 
-    log_info("HPET base is located at {#016x}", hpet_base);
-    log_info("HPET counter tick period is equal to {}ns", hpet_clock / 1000000);
+    if (hpet_base != 0xfed00000) {
+        log_info("HPET base is located at {#016x}", hpet_base);
+        log_info("HPET counter tick period is equal to {}ns", hpet_clock / 1000000);
+    }
 
     hpet_write(HPET_REG_GENERAL_CONFIG, 0);
     hpet_write(HPET_REG_MAIN_COUNTER, 0);

@@ -1,10 +1,10 @@
 PointerAlignment: Right
 IncludeBlocks: Preserve
 AlwaysBreakTemplateDeclarations: Yes
-AllowShortFunctionsOnASingleLine: Inline
+AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
-AllowShortCaseLabelsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: false
 SpaceAfterCStyleCast: true
 AccessModifierOffset: -4
 ColumnLimit: 140

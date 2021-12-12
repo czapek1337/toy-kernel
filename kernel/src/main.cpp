@@ -51,11 +51,6 @@ extern "C" void kernel_start(Stivale2Struct *boot_info) {
     auto hello_elf = boot_info->query_module("hello.elf");
 
     Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
-    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
-    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
-    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
-    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
-    Process::spawn(nullptr, "hello", (Elf64 *) hello_elf->base, true);
 
     // Start scheduling by enabling interrupts
     intr::release();

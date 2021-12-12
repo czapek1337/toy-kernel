@@ -60,9 +60,10 @@ Process *Process::spawn(Process *parent_process, const core::String &name, uint6
     process->pml4 = vmm::create_pml4();
     process->name = name;
 
-    auto main_thread = Thread::spawn(process, entry, is_user);
+    process->main_thread = Thread::spawn(process, entry, is_user);
 
-    sched::queue(main_thread);
+    if (pid_counter != 0)
+        sched::queue(process->main_thread);
 
     return process;
 }
@@ -109,9 +110,10 @@ Process *Process::spawn(Process *parent_process, const core::String &name, Elf64
         __builtin_memcpy((uint8_t *) phys_to_io(phys_addr) + misalignment, (uint8_t *) ((uint64_t) elf + phdr->offset), phdr->filesz);
     }
 
-    auto main_thread = Thread::spawn(process, elf->entry, is_user);
+    process->main_thread = Thread::spawn(process, elf->entry, is_user);
 
-    sched::queue(main_thread);
+    if (pid_counter != 0)
+        sched::queue(process->main_thread);
 
     return process;
 }

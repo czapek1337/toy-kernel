@@ -17,6 +17,7 @@ struct Thread {
     uint64_t syscall_kernel_stack;
     uint64_t syscall_user_stack;
 
+    bool in_syscall;
     bool is_running;
 
     Process *process;

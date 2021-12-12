@@ -161,7 +161,12 @@ void print_format_log_unlocked(LogLevel level, const char *file, int line, const
     auto current_thread = sched::get_current_thread();
     auto current_proc = current_thread ? current_thread->process : nullptr;
 
-    print_format("{}: {}: {}:{}: ", current_proc ? current_proc->name.data() : "kernel", level, file, line);
+    if (current_proc && !current_thread->in_syscall)
+        print_format("{}({}): ", current_proc->name, current_proc->id);
+    else
+        print_format("kernel(0): ");
+
+    print_format("{}: {}:{}: ", level, file, line);
     print_format(format, args...);
 
     format_arg('\n', {});

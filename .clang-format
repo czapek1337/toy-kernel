@@ -1,0 +1,17 @@
+IndentWidth: 2
+ConstructorInitializerIndentWidth: 2
+ContinuationIndentWidth: 2
+UseTab: Never
+ColumnLimit: 140
+SpaceAfterCStyleCast: true
+PointerAlignment: Right
+NamespaceIndentation: All
+AlwaysBreakTemplateDeclarations: Yes
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+IndentPPDirectives: AfterHash

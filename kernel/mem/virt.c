@@ -3,13 +3,14 @@
 #include "../utils/print.h"
 #include "../utils/spin.h"
 #include "../utils/utils.h"
+#include "heap.h"
 #include "virt.h"
 
 static page_table_t *kernel_pt;
 static vaddr_t hhdm_offset;
 static spin_lock_t vmm_lock;
 
-static page_table_t *get_next_pt(page_table_t *pt, size_t index, bool create_if_missing) {
+static page_table_t *pt_get_next(page_table_t *pt, size_t index, bool create_if_missing) {
   if (!pt)
     return NULL;
 
@@ -32,9 +33,9 @@ static void pt_map_single(page_table_t *pt, vaddr_t virt, paddr_t phys, uint64_t
   size_t pml2_index = (virt >> 21) & 0x1ff;
   size_t pml1_index = (virt >> 12) & 0x1ff;
 
-  page_table_t *pml3 = get_next_pt(pt, pml4_index, true);
-  page_table_t *pml2 = get_next_pt(pml3, pml3_index, true);
-  page_table_t *pml1 = get_next_pt(pml2, pml2_index, true);
+  page_table_t *pml3 = pt_get_next(pt, pml4_index, true);
+  page_table_t *pml2 = pt_get_next(pml3, pml3_index, true);
+  page_table_t *pml1 = pt_get_next(pml2, pml2_index, true);
 
   if (IS_SET(pml1->entries[pml1_index], PTE_P))
     klog_panic("Tried to map a virtual address %p that's already mapped to %p", virt, pml1->entries[pml1_index] & PTE_ADDR_MASK);
@@ -48,9 +49,9 @@ static void pt_unmap_single(page_table_t *pt, vaddr_t virt) {
   size_t pml2_index = (virt >> 21) & 0x1ff;
   size_t pml1_index = (virt >> 12) & 0x1ff;
 
-  page_table_t *pml3 = get_next_pt(pt, pml4_index, false);
-  page_table_t *pml2 = get_next_pt(pml3, pml3_index, false);
-  page_table_t *pml1 = get_next_pt(pml2, pml2_index, false);
+  page_table_t *pml3 = pt_get_next(pt, pml4_index, false);
+  page_table_t *pml2 = pt_get_next(pml3, pml3_index, false);
+  page_table_t *pml1 = pt_get_next(pml2, pml2_index, false);
 
   if (!pml1 || IS_CLEAR(pml1->entries[pml1_index], PTE_P))
     klog_panic("Tried to unmap a virtual address %p that isn't mapped", virt);
@@ -58,6 +59,20 @@ static void pt_unmap_single(page_table_t *pt, vaddr_t virt) {
   pml1->entries[pml1_index] = 0;
 
   asm("invlpg (%0)" : : "r"(virt));
+}
+
+static void pt_destroy(page_table_t *pt, size_t level, size_t start, size_t end) {
+  if (level < 1)
+    return;
+
+  for (size_t i = start; i < end; i++) {
+    page_table_t *next_pml = pt_get_next(pt, i, false);
+
+    if (next_pml)
+      pt_destroy(next_pml, level - 1, 0, 512);
+  }
+
+  phys_free((paddr_t) pt - hhdm_offset, 1);
 }
 
 static void pt_map(page_table_t *pt, vaddr_t virt, paddr_t phys, size_t size, uint64_t flags) {
@@ -79,6 +94,10 @@ static void pt_unmap(page_table_t *pt, vaddr_t virt, size_t size) {
   }
 }
 
+void vm_destroy(address_space_t *vm) {
+  pt_destroy(vm->pt, 4, 0, 255);
+}
+
 void vm_map(address_space_t *vm, vaddr_t virt, paddr_t phys, size_t size, uint64_t flags) {
   spin_lock(&vmm_lock);
   pt_map(vm->pt, virt, phys, size, flags);
@@ -96,7 +115,15 @@ void vm_switch(address_space_t *vm) {
 }
 
 address_space_t *virt_new_vm() {
-  return NULL;
+  address_space_t *vm = heap_alloc(sizeof(address_space_t));
+
+  vm->pt = (page_table_t *) (hhdm_offset + phys_alloc(1));
+
+  for (size_t i = 256; i < 512; i++) {
+    vm->pt->entries[i] = kernel_pt->entries[i];
+  }
+
+  return vm;
 }
 
 void virt_init(struct stivale2_struct_tag_pmrs *pmrs_tag,                       //
@@ -126,4 +153,8 @@ void virt_init(struct stivale2_struct_tag_pmrs *pmrs_tag,                       
   }
 
   asm("mov %0, %%cr3" : : "r"((vaddr_t) kernel_pt - hhdm_offset));
+}
+
+vaddr_t phys_to_virt(paddr_t phys) {
+  return phys + hhdm_offset;
 }

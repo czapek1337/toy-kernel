@@ -1,5 +1,6 @@
 #include "arch/idt.h"
 #include "boot/stivale2.h"
+#include "mem/heap.h"
 #include "mem/phys.h"
 #include "mem/virt.h"
 #include "utils/print.h"
@@ -50,6 +51,7 @@ void kernel_main(struct stivale2_struct *boot_info) {
   idt_init();
   phys_init(mmap_tag);
   virt_init(pmrs_tag, kernel_base_tag, hhdm_tag);
+  heap_init();
 
   klog_info("Hello, world!");
 

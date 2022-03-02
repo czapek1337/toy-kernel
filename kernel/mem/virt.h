@@ -25,6 +25,7 @@ typedef struct {
   page_table_t *pt;
 } address_space_t;
 
+void vm_destroy(address_space_t *vm);
 void vm_map(address_space_t *vm, vaddr_t virt, paddr_t phys, size_t size, uint64_t flags);
 void vm_unmap(address_space_t *vm, vaddr_t virt, size_t size);
 void vm_switch(address_space_t *vm);
@@ -34,3 +35,5 @@ address_space_t *virt_new_vm();
 void virt_init(struct stivale2_struct_tag_pmrs *pmrs_tag,                       //
                struct stivale2_struct_tag_kernel_base_address *kernel_base_tag, //
                struct stivale2_struct_tag_hhdm *hhdm_tag);
+
+vaddr_t phys_to_virt(paddr_t phys);

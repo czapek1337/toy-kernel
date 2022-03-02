@@ -1,6 +1,7 @@
 #include "acpi/acpi.h"
 #include "arch/idt.h"
 #include "boot/stivale2.h"
+#include "interrupts/apic.h"
 #include "mem/heap.h"
 #include "mem/phys.h"
 #include "mem/virt.h"
@@ -57,6 +58,7 @@ void kernel_main(struct stivale2_struct *boot_info) {
   heap_init();
 
   acpi_init(rsdp_tag);
+  apic_init();
 
   klog_info("Hello, world!");
 

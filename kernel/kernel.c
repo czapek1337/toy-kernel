@@ -53,6 +53,8 @@ void kernel_main(struct stivale2_struct *boot_info) {
   virt_init(pmrs_tag, kernel_base_tag, hhdm_tag);
   heap_init();
 
+  asm("int $0x80");
+
   klog_info("Hello, world!");
 
   while (1) {

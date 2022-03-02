@@ -17,21 +17,21 @@
 %endmacro
 
 %macro pop_gpr 0
-  push r15
-  push r14
-  push r13
-  push r12
-  push r11
-  push rsi
-  push r10
-  push r9
-  push r8
-  push rdi
-  push rbp
-  push rdx
-  push rcx
-  push rbx
-  push rax
+  pop r15
+  pop r14
+  pop r13
+  pop r12
+  pop r11
+  pop r10
+  pop r9
+  pop r8
+  pop rsi
+  pop rdi
+  pop rbp
+  pop rdx
+  pop rcx
+  pop rbx
+  pop rax
 %endmacro
 
 %macro isr_stub_ref 1

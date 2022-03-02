@@ -3,10 +3,10 @@
 all: build/image.iso
 
 run: build/image.iso
-	@qemu-system-x86_64 -M q35 -m 2G -cdrom $< -boot d -serial stdio
+	@qemu-system-x86_64 -M q35 -m 2G -cdrom $< -boot d -serial stdio $(QEMUFLAGS)
 
 run-debug: build/image.iso
-	@qemu-system-x86_64 -M q35,smm=off -d int -m 2G -cdrom $< -boot d -serial stdio
+	@qemu-system-x86_64 -M q35,smm=off -d int -m 2G -cdrom $< -boot d -serial stdio $(QEMUFLAGS)
 
 limine:
 	@git clone https://github.com/limine-bootloader/limine --branch=latest-binary --depth=1
@@ -26,7 +26,7 @@ ASM ?= nasm
 LD  ?= ld
 CC  ?= cc
 
-ASMFLAGS = -f elf64
+ASMFLAGS = -f elf64 -g
 LDFLAGS  = -T misc/kernel.ld -nostdlib -z max-page-size=0x1000 -static
 CFLAGS   = -O0 -g -Wall -Wextra -pipe \
 	-ffreestanding \

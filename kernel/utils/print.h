@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "../proc/cpu.h"
 #include "elf.h"
 
 void panic_load_symbols(elf64_header_t *elf);
@@ -10,7 +11,8 @@ void __attribute__((noreturn)) panic_backtrace();
 
 void println(const char *format, ...);
 
-#define klog(status, format, ...) println("\x1b[37;1m%s:%d " status " \x1b[0m" format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define klog(status, format, ...)                                                                                                          \
+  println("\x1b[30;1m(CPU %d) \x1b[37;1m%s:%d " status " \x1b[0m" format, cpu_get()->id, __FILE__, __LINE__, ##__VA_ARGS__)
 
 #define klog_debug(format, ...) klog("\x1b[36;1mdebug", format, ##__VA_ARGS__)
 #define klog_info(format, ...) klog("\x1b[32;1minfo", format, ##__VA_ARGS__)

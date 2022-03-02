@@ -1,4 +1,4 @@
-ENTRY(kernel_main)
+ENTRY(kernel_bsp_main)
 
 PHDRS {
   null    PT_NULL FLAGS(0) ;              /* Null segment */

@@ -4,7 +4,9 @@
 
 #include "../arch/port.h"
 #include "print.h"
+#include "spin.h"
 
+static spin_lock_t print_lock;
 static elf64_header_t *kernel_elf_header;
 static elf64_section_header_t *kernel_symbol_table;
 static elf64_section_header_t *kernel_string_table;
@@ -167,6 +169,8 @@ void println(const char *format, ...) {
 
   va_start(args, format);
 
+  spin_lock(&print_lock);
+
   while (1) {
     while (*format && *format != '%') {
       print_char(*format++);
@@ -222,4 +226,6 @@ void println(const char *format, ...) {
   va_end(args);
 
   print_char('\n');
+
+  spin_unlock(&print_lock);
 }

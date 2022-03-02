@@ -5,13 +5,20 @@
 #include "mem/heap.h"
 #include "mem/phys.h"
 #include "mem/virt.h"
+#include "proc/cpu.h"
+#include "proc/smp.h"
 #include "utils/print.h"
 
 __attribute__((aligned(16))) //
 static uint8_t stack[8192];
 
+static struct stivale2_header_tag_smp smp_tag = {
+  .tag = {.identifier = STIVALE2_HEADER_TAG_SMP_ID, .next = 0},
+  .flags = 1 << 1,
+};
+
 static struct stivale2_header_tag_framebuffer framebuffer_tag = {
-  .tag = {.identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID, .next = 0},
+  .tag = {.identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID, .next = (uint64_t) &smp_tag},
   .framebuffer_width = 0,
   .framebuffer_height = 0,
   .framebuffer_bpp = 0,
@@ -38,29 +45,44 @@ static void *find_tag(struct stivale2_struct *boot_info, uint64_t id) {
   return tag;
 }
 
-void kernel_main(struct stivale2_struct *boot_info) {
+void kernel_bsp_main(struct stivale2_struct *boot_info) {
+  idt_init();
+  cpu_init_bsp();
+
   struct stivale2_struct_tag_pmrs *pmrs_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_PMRS_ID);
   struct stivale2_struct_tag_kernel_base_address *kernel_base_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID);
   struct stivale2_struct_tag_memmap *mmap_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_MEMMAP_ID);
   struct stivale2_struct_tag_kernel_file *kernel_file_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_KERNEL_FILE_ID);
   struct stivale2_struct_tag_hhdm *hhdm_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_HHDM_ID);
   struct stivale2_struct_tag_rsdp *rsdp_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_RSDP_ID);
+  struct stivale2_struct_tag_smp *smp_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_SMP_ID);
 
-  assert_msg(pmrs_tag && kernel_base_tag && mmap_tag && hhdm_tag && rsdp_tag, //
+  assert_msg(pmrs_tag && kernel_base_tag && mmap_tag && hhdm_tag && rsdp_tag && smp_tag, //
              "Cannot proceed without one or more required struct tags");
 
   if (kernel_file_tag)
     panic_load_symbols((elf64_header_t *) kernel_file_tag->kernel_file);
 
-  idt_init();
   phys_init(mmap_tag);
   virt_init(pmrs_tag, kernel_base_tag, hhdm_tag);
   heap_init();
+
+  smp_init(smp_tag);
 
   acpi_init(rsdp_tag);
   apic_init();
 
   klog_info("Hello, world!");
+
+  while (1) {
+    asm("hlt");
+  }
+}
+
+void kernel_ap_main(struct stivale2_smp_info *ap_info) {
+  cpu_init(ap_info->processor_id, ap_info->lapic_id);
+
+  klog_info("Hello, multi-core world!");
 
   while (1) {
     asm("hlt");

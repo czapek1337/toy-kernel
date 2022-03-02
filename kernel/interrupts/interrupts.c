@@ -22,11 +22,9 @@ void interrupt_handle(isr_frame_t *frame) {
 }
 
 void interrupt_register(size_t vector, isr_handler_t handler) {
-  vector -= 32;
+  assert_msg(isr_handlers[vector - 32] == 0, "Tried to register a handler for an existing interrupt vector %x", vector);
 
-  assert_msg(isr_handlers[vector] == 0, "Tried to register a handler for an existing interrupt vector %d", vector);
-
-  isr_handlers[vector] = handler;
+  isr_handlers[vector - 32] = handler;
 }
 
 size_t interrupt_alloc_vec() {

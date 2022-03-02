@@ -14,6 +14,7 @@ void println(const char *format, ...);
 
 #define klog_debug(format, ...) klog("\x1b[36;1mdebug", format, ##__VA_ARGS__)
 #define klog_info(format, ...) klog("\x1b[32;1minfo", format, ##__VA_ARGS__)
+#define klog_warn(format, ...) klog("\x1b[33;1mwarn", format, ##__VA_ARGS__)
 #define klog_error(format, ...) klog("\x1b[31;1merror", format, ##__VA_ARGS__)
 #define klog_panic(format, ...)                                                                                                            \
   do {                                                                                                                                     \

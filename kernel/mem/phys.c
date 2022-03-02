@@ -1,8 +1,8 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "../utils/align.h"
 #include "../utils/print.h"
+#include "../utils/utils.h"
 #include "phys.h"
 
 static uint8_t *bitmap_data;
@@ -11,7 +11,7 @@ static size_t bitmap_allocation_hint;
 
 static void bitmap_set(size_t bit, bool state) {
   size_t index = bit / 8;
-  size_t mask = 1 << (bit % 8);
+  size_t mask = BIT_MASK(bit % 8);
 
   assert_msg(index < bitmap_length, "Tried to index outside bitmap bounds (%d >= %d)", index, bitmap_length);
 
@@ -34,9 +34,9 @@ static uint64_t bitmap_find_unused(size_t start, size_t bits) {
     for (size_t j = 0; found && j < bits; j++) {
       size_t bit = i + j;
       size_t index = bit / 8;
-      size_t mask = 1 << (bit % 8);
+      size_t mask = BIT_MASK(bit % 8);
 
-      if (bitmap_data[index] & mask)
+      if (IS_SET(bitmap_data[index], mask))
         found = false;
     }
 
@@ -48,9 +48,7 @@ static uint64_t bitmap_find_unused(size_t start, size_t bits) {
 }
 
 void phys_init(struct stivale2_struct_tag_memmap *memmap_tag) {
-  assert(memmap_tag);
-
-  uint64_t max_address = 0;
+  paddr_t max_address = 0;
 
   for (size_t i = 0; i < memmap_tag->entries; i++) {
     struct stivale2_mmap_entry *entry = &memmap_tag->memmap[i];
@@ -64,7 +62,7 @@ void phys_init(struct stivale2_struct_tag_memmap *memmap_tag) {
       max_address = entry->base + entry->length;
   }
 
-  uint64_t bitmap_size = max_address / 4096 / 8 + 1;
+  size_t bitmap_size = max_address / 4096 / 8 + 1;
 
   struct stivale2_mmap_entry *bitmap_entry = NULL;
 
@@ -75,7 +73,7 @@ void phys_init(struct stivale2_struct_tag_memmap *memmap_tag) {
       bitmap_entry = entry;
   }
 
-  assert(bitmap_entry);
+  assert_msg(bitmap_entry, "Could not find a suitable place in memory to host the bitmap");
 
   bitmap_data = (uint8_t *) bitmap_entry->base;
   bitmap_length = bitmap_size;
@@ -96,13 +94,13 @@ void phys_init(struct stivale2_struct_tag_memmap *memmap_tag) {
   bitmap_set_range(bitmap_entry->base / 4096, ALIGN_UP(bitmap_size / 4096, 4096), true);
 }
 
-void phys_free(uint64_t addr, size_t pages) {
-  assert((addr & 0xfff) == 0);
+void phys_free(paddr_t addr, size_t pages) {
+  assert_msg((addr & 0xfff) == 0, "Attempt to free an unaligned physical address");
 
   bitmap_set_range(addr / 4096, pages, false);
 }
 
-uint64_t phys_alloc(size_t pages) {
+paddr_t phys_alloc(size_t pages) {
   size_t allocation = bitmap_find_unused(bitmap_allocation_hint, pages);
 
   if (allocation != (size_t) -1) {

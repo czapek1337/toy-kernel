@@ -5,7 +5,9 @@
 
 #include "../boot/stivale2.h"
 
-void phys_init(struct stivale2_struct_tag_memmap *memmap_tag);
-void phys_free(uint64_t addr, size_t pages);
+typedef uint64_t paddr_t;
 
-uint64_t phys_alloc(size_t pages);
+void phys_init(struct stivale2_struct_tag_memmap *mmap_tag);
+void phys_free(paddr_t addr, size_t pages);
+
+paddr_t phys_alloc(size_t pages);

@@ -66,7 +66,6 @@ void kernel_bsp_main(struct stivale2_struct *boot_info) {
   phys_init(mmap_tag);
   virt_init(pmrs_tag, kernel_base_tag, hhdm_tag);
   heap_init();
-
   smp_init(smp_tag);
 
   acpi_init(rsdp_tag);
@@ -80,7 +79,7 @@ void kernel_bsp_main(struct stivale2_struct *boot_info) {
 }
 
 void kernel_ap_main(struct stivale2_smp_info *ap_info) {
-  cpu_init(ap_info->processor_id, ap_info->lapic_id);
+  smp_init_cpu(ap_info);
 
   klog_info("Hello, multi-core world!");
 

@@ -1,7 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../utils/print.h"
 #include "idt.h"
 
 #define IDTE_P 1 << 7
@@ -44,9 +43,4 @@ void idt_init() {
 
   asm("lidt %0" : : "m"(idtr) : "memory");
   asm("sti" ::: "memory");
-}
-
-void idt_handle_interrupt(isr_frame_t *frame) {
-  if (frame->vec < 32)
-    klog_panic("An unexpected exception occurred: %x", frame->vec);
 }

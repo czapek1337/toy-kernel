@@ -53,13 +53,13 @@ isr_stub_%1:
 
 section .text
 
-extern idt_handle_interrupt
+extern interrupt_handle
 
 isr_stub_common:
   push_gpr
 
   mov rdi, rsp
-  call idt_handle_interrupt
+  call interrupt_handle
 
   pop_gpr
   add rsp, 16

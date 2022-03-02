@@ -91,7 +91,7 @@ static bool resolve_symbol(uint64_t rip, const char **name, uint64_t *offset) {
   if (!kernel_elf_header || !kernel_symbol_table || !kernel_string_table)
     goto error;
 
-  elf64_symbol_t *symbols = (elf64_symbol_t *) ((uint64_t) kernel_elf_header + kernel_symbol_table->sh_offset);
+  elf64_symbol_t *symbols = (elf64_symbol_t *) ((uintptr_t) kernel_elf_header + kernel_symbol_table->sh_offset);
 
   for (size_t i = 0; i < kernel_symbol_table->sh_size / kernel_symbol_table->sh_entsize; i++) {
     elf64_symbol_t *symbol = &symbols[i];
@@ -100,7 +100,7 @@ static bool resolve_symbol(uint64_t rip, const char **name, uint64_t *offset) {
       continue;
 
     if (symbol->st_name < kernel_string_table->sh_size) {
-      *name = (const char *) ((uint64_t) kernel_elf_header + kernel_string_table->sh_offset + symbol->st_name);
+      *name = (const char *) ((uintptr_t) kernel_elf_header + kernel_string_table->sh_offset + symbol->st_name);
       *offset = rip - symbol->st_value;
 
       return true;
@@ -121,7 +121,7 @@ void panic_load_symbols(elf64_header_t *elf) {
   kernel_elf_header = elf;
 
   for (size_t i = 0; i < elf->e_shnum; i++) {
-    elf64_section_header_t *section = (elf64_section_header_t *) ((uint64_t) elf + elf->e_shoff + elf->e_shentsize * i);
+    elf64_section_header_t *section = (elf64_section_header_t *) ((uintptr_t) elf + elf->e_shoff + elf->e_shentsize * i);
 
     if (section->sh_type == SHT_SYMTAB && !kernel_symbol_table) {
       kernel_symbol_table = section;

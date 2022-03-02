@@ -20,7 +20,7 @@ void smp_init(struct stivale2_struct_tag_smp *smp_tag) {
       continue;
 
     info->target_stack = phys_to_virt(phys_alloc(2) + 0x2000);
-    info->goto_address = (uint64_t) kernel_ap_main;
+    info->goto_address = (uintptr_t) kernel_ap_main;
 
     ap_count++;
   }

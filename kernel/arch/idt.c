@@ -6,7 +6,7 @@
 #define IDTE_P 1 << 7
 #define IDTE_INT_GATE 0b1110
 
-typedef struct __attribute__((packed)) {
+typedef struct {
   uint16_t offset_low;
   uint16_t selector;
   uint8_t ist;
@@ -14,12 +14,12 @@ typedef struct __attribute__((packed)) {
   uint16_t offset_mid;
   uint32_t offset_high;
   uint32_t reserved;
-} interrupt_desc_t;
+} __attribute__((packed)) interrupt_desc_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
   uint16_t limit;
   uint64_t base;
-} idtr_t;
+} __attribute__((packed)) idtr_t;
 
 static interrupt_desc_t idt_desc[256];
 
@@ -39,7 +39,7 @@ void idt_init() {
   idtr_t idtr;
 
   idtr.limit = sizeof(idt_desc) - 1;
-  idtr.base = (uint64_t) idt_desc;
+  idtr.base = (uintptr_t) idt_desc;
 
   asm("lidt %0" : : "m"(idtr) : "memory");
   asm("sti" ::: "memory");

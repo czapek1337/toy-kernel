@@ -115,7 +115,7 @@ void vm_switch(address_space_t *vm) {
 }
 
 address_space_t *virt_new_vm() {
-  address_space_t *vm = heap_alloc(sizeof(address_space_t));
+  address_space_t *vm = ALLOC(address_space_t);
 
   vm->pt = (page_table_t *) (hhdm_offset + phys_alloc(1));
 

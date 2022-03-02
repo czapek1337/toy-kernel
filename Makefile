@@ -3,6 +3,9 @@
 all: build/image.iso
 
 run: build/image.iso
+	@qemu-system-x86_64 -M q35 -m 2G -cdrom $< -boot d -serial stdio
+
+run-debug: build/image.iso
 	@qemu-system-x86_64 -M q35,smm=off -d int -m 2G -cdrom $< -boot d -serial stdio
 
 limine:
@@ -14,9 +17,9 @@ kernel: build/kernel.elf
 clean:
 	@rm -rf build
 
-C_FILES = $(shell find kernel -type f -name '*.c')
+C_FILES   = $(shell find kernel -type f -name '*.c')
 ASM_FILES = $(shell find kernel -type f -name '*.asm')
-OBJECT_FILES = $(patsubst %,build/%.o,$(C_FILES) $(ASM_FILES))
+OBJ_FILES = $(patsubst %,build/%.o,$(C_FILES) $(ASM_FILES))
 DEP_FILES = $(patsubst %,build/%.d,$(C_FILES))
 
 ASM ?= nasm
@@ -40,7 +43,7 @@ CFLAGS   = -O0 -g -Wall -Wextra -pipe \
 
 -include $(DEP_FILES)
 
-build/kernel.elf: $(OBJECT_FILES)
+build/kernel.elf: $(OBJ_FILES)
 	@mkdir -p $(dir $@)
 	@$(LD) $^ $(LDFLAGS) -o $@
 

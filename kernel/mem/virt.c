@@ -1,11 +1,13 @@
 #include <stdbool.h>
 
 #include "../utils/print.h"
+#include "../utils/spin.h"
 #include "../utils/utils.h"
 #include "virt.h"
 
 static page_table_t *kernel_pt;
 static vaddr_t hhdm_offset;
+static spin_lock_t vmm_lock;
 
 static page_table_t *get_next_pt(page_table_t *pt, size_t index, bool create_if_missing) {
   if (!pt)
@@ -78,11 +80,15 @@ static void pt_unmap(page_table_t *pt, vaddr_t virt, size_t size) {
 }
 
 void vm_map(address_space_t *vm, vaddr_t virt, paddr_t phys, size_t size, uint64_t flags) {
+  spin_lock(&vmm_lock);
   pt_map(vm->pt, virt, phys, size, flags);
+  spin_unlock(&vmm_lock);
 }
 
 void vm_unmap(address_space_t *vm, vaddr_t virt, size_t size) {
+  spin_lock(&vmm_lock);
   pt_unmap(vm->pt, virt, size);
+  spin_unlock(&vmm_lock);
 }
 
 void vm_switch(address_space_t *vm) {

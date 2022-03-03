@@ -1,4 +1,4 @@
-.PHONY: all run kernel clean
+.PHONY: all run kernel initrd clean
 
 all: build/image.iso
 
@@ -13,6 +13,8 @@ limine:
 	@make -C limine
 
 kernel: build/kernel.elf
+
+initrd: build/initrd.tar
 
 clean:
 	@rm -rf build
@@ -55,9 +57,12 @@ build/%.asm.o: %.asm
 	@mkdir -p $(dir $@)
 	@$(ASM) $(ASMFLAGS) -o $@ $<
 
-build/image.iso: limine kernel
+build/initrd.tar:
+	@misc/build-initrd.sh $@
+
+build/image.iso: limine kernel initrd
 	@rm -rf build/iso_root
 	@mkdir -p build/iso_root
-	@cp build/kernel.elf misc/limine.cfg limine/limine.sys limine/limine-cd.bin build/iso_root
-	@xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table build/iso_root -o $@ 2>/dev/null
+	@cp build/kernel.elf build/initrd.tar misc/limine.cfg limine/limine.sys limine/limine-eltorito-efi.bin limine/limine-cd.bin build/iso_root
+	@xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot limine-eltorito-efi.bin build/iso_root -o $@ 2>/dev/null
 	@rm -rf build/iso_root

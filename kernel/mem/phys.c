@@ -64,14 +64,14 @@ void phys_init(struct stivale2_struct_tag_memmap *memmap_tag) {
       max_address = entry->base + entry->length;
   }
 
-  size_t bitmap_size = max_address / 4096 / 8 + 1;
+  size_t bitmap_size = ALIGN_UP(max_address, 4096) / 4096 / 8 + 1;
 
   struct stivale2_mmap_entry *bitmap_entry = NULL;
 
-  for (size_t i = 0; i < memmap_tag->entries; i++) {
+  for (size_t i = 0; !bitmap_entry && i < memmap_tag->entries; i++) {
     struct stivale2_mmap_entry *entry = &memmap_tag->memmap[i];
 
-    if (entry->type == STIVALE2_MMAP_USABLE && entry->length >= bitmap_size)
+    if (entry->type == STIVALE2_MMAP_USABLE && entry->length > bitmap_size)
       bitmap_entry = entry;
   }
 
@@ -100,7 +100,9 @@ void phys_free(paddr_t addr, size_t pages) {
   assert_msg((addr & 0xfff) == 0, "Attempt to free an unaligned physical address");
 
   spin_lock(&pmm_lock);
+
   bitmap_set_range(addr / 4096, pages, false);
+
   spin_unlock(&pmm_lock);
 }
 

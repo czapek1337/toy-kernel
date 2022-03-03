@@ -100,13 +100,17 @@ void vm_destroy(address_space_t *vm) {
 
 void vm_map(address_space_t *vm, vaddr_t virt, paddr_t phys, size_t size, uint64_t flags) {
   spin_lock(&vmm_lock);
+
   pt_map(vm->pt, virt, phys, size, flags);
+
   spin_unlock(&vmm_lock);
 }
 
 void vm_unmap(address_space_t *vm, vaddr_t virt, size_t size) {
   spin_lock(&vmm_lock);
+
   pt_unmap(vm->pt, virt, size);
+
   spin_unlock(&vmm_lock);
 }
 

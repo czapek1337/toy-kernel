@@ -48,6 +48,7 @@ void sched_preempt(isr_frame_t *frame) {
   thread_t *thread = ll_entry(heap_free_list.next, thread_t, node);
 
   ll_delete(&thread->node);
+
   spin_unlock(&scheduler_lock);
 
   if (cpu->thread)

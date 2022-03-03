@@ -116,6 +116,7 @@ paddr_t phys_alloc(size_t pages) {
       bitmap_allocation_hint = allocation + pages;
 
       bitmap_set_range(allocation, pages, true);
+
       spin_unlock(&pmm_lock);
 
       memset((void *) (allocation * 4096), 0, pages * 4096);

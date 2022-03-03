@@ -106,6 +106,7 @@ void *heap_alloc(size_t size) {
 
   if (!pointer) {
     spin_unlock(&heap_lock);
+
     return pointer;
   }
 

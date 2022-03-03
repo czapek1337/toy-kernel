@@ -63,6 +63,7 @@ void gdt_init_tss() {
   cpu_info_t *cpu = cpu_get();
 
   gdt_entry_ex_t *tss_entry = (gdt_entry_ex_t *) &gdt_entries[GDT_TSS / 8];
+
   uintptr_t tss_address = (uintptr_t) &cpu->tss;
 
   spin_lock(&gdt_lock);

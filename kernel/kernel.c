@@ -77,12 +77,6 @@ void kernel_bsp_main(struct stivale2_struct *boot_info) {
   // TODO: Make the scheduler SMP aware :^)
   // smp_init(smp_tag);
 
-  for (size_t i = 0; i < modules_tag->module_count; i++) {
-    struct stivale2_module *module = &modules_tag->modules[i];
-
-    sched_push(thread_create_elf((elf64_header_t *) module->begin, true));
-  }
-
   sched_init();
   apic_init();
 

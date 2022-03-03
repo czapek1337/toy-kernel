@@ -1,0 +1,12 @@
+[binaries]
+c = 'x86_64-toy-gcc'
+cpp = 'x86_64-toy-g++'
+ar = 'x86_64-toy-ar'
+strip = 'x86_64-toy-strip'
+ld = 'x86_64-toy-ld'
+
+[host_machine]
+system = 'toy'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'

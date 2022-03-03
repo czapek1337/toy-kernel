@@ -1,0 +1,25 @@
+From 2af5a642a85ddde8b074a44656c0686c97b0057c Mon Sep 17 00:00:00 2001
+From: czapek1337 <czapek1337@gmail.com>
+Date: Thu, 3 Mar 2022 13:12:04 +0100
+Subject: [PATCH] Patches for my toy OS
+
+---
+ lib/config.sub | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/config.sub b/lib/config.sub
+index d74fb6d..89ea057 100755
+--- a/lib/config.sub
++++ b/lib/config.sub
+@@ -1723,7 +1723,7 @@ case $os in
+ 	     | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
+ 	     | sym* |  plan9* | psp* | sim* | xray* | os68k* | v88r* \
+ 	     | hiux* | abug | nacl* | netware* | windows* \
+-	     | os9* | macos* | osx* | ios* \
++	     | os9* | macos* | osx* | ios* | toy* \
+ 	     | mpw* | magic* | mmixware* | mon960* | lnews* \
+ 	     | amigaos* | amigados* | msdos* | newsos* | unicos* | aof* \
+ 	     | aos* | aros* | cloudabi* | sortix* | twizzler* \
+-- 
+2.35.1
+

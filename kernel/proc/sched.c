@@ -12,15 +12,20 @@ static ll_node_t heap_free_list = {
   .next = &heap_free_list,
 };
 
-static void sched_idle_thread() {
-  klog_info("Starting the idle thread");
+static void sched_syscall_handler(isr_frame_t *frame) {
+  klog_debug("System call %x with params: (%x, %x, %x, %x, %x, %x)", //
+             frame->rax, frame->rdi, frame->rsi, frame->rdx, frame->rcx, frame->r8, frame->r9);
+}
 
+static void sched_idle_thread() {
   while (1) {
     asm("hlt");
   }
 }
 
 void sched_init() {
+  interrupt_register(0x80, sched_syscall_handler);
+
   sched_push(thread_create((vaddr_t) sched_idle_thread, false));
 }
 

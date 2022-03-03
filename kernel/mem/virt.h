@@ -5,6 +5,7 @@
 
 #include <boot/stivale2.h>
 #include <mem/phys.h>
+#include <utils/spin.h>
 
 #define PTE_P 1ul << 0
 #define PTE_W 1ul << 1
@@ -27,6 +28,8 @@ namespace mem {
   };
 
   struct address_space_t {
+    utils::spin_lock_t vm_lock;
+
     page_table_t *pt;
 
     void map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags);

@@ -36,6 +36,8 @@ CXXFLAGS = -I kernel -O0 -g -Wall -Wextra -pipe -std=gnu++20 \
 	-fno-rtti \
 	-fno-omit-frame-pointer \
 	-fno-stack-protector \
+	-fno-use-cxa-atexit \
+	-fsized-deallocation \
 	-fno-pic \
 	-mno-80387 \
 	-mno-mmx \

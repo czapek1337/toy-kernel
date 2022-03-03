@@ -1,12 +1,9 @@
 #include <mem/heap.h>
 #include <mem/virt.h>
 #include <utils/print.h>
-#include <utils/spin.h>
 #include <utils/utils.h>
 
 static mem::page_table_t *kernel_pt;
-
-static utils::spin_lock_t vmm_lock;
 
 static vaddr_t hhdm_offset;
 
@@ -84,13 +81,13 @@ void mem::page_table_t::unmap(vaddr_t virt, size_t size) {
 }
 
 void mem::address_space_t::map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags) {
-  utils::spin_lock_guard_t lock(vmm_lock);
+  utils::spin_lock_guard_t lock(vm_lock);
 
   pt->map(virt, phys, size, flags);
 }
 
 void mem::address_space_t::unmap(vaddr_t virt, size_t size) {
-  utils::spin_lock_guard_t lock(vmm_lock);
+  utils::spin_lock_guard_t lock(vm_lock);
 
   pt->unmap(virt, size);
 }
@@ -102,7 +99,7 @@ void mem::address_space_t::switch_to() {
 void mem::destroy_vm(address_space_t *vm) {
   pt_destroy_level(vm->pt, 4, 0, 255);
 
-  // TODO: Free the VM itself
+  delete vm;
 }
 
 mem::address_space_t *mem::new_vm() {

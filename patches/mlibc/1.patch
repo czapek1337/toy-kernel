@@ -1,0 +1,511 @@
+From c65d993d76752d672bc19c9870301b87a380afb5 Mon Sep 17 00:00:00 2001
+From: czapek1337 <czapek1337@gmail.com>
+Date: Thu, 3 Mar 2022 16:05:58 +0100
+Subject: [PATCH] Start working on toy OS sysdep
+
+---
+ meson.build                                |  4 ++
+ sysdeps/toy/crt-x86_64/crt0.S              |  9 +++
+ sysdeps/toy/generic/entry.cpp              |  7 ++
+ sysdeps/toy/generic/toy.cpp                | 43 ++++++++++++
+ sysdeps/toy/include/abi-bits/abi.h         |  1 +
+ sysdeps/toy/include/abi-bits/auxv.h        |  1 +
+ sysdeps/toy/include/abi-bits/blkcnt_t.h    |  1 +
+ sysdeps/toy/include/abi-bits/blksize_t.h   |  1 +
+ sysdeps/toy/include/abi-bits/dev_t.h       |  1 +
+ sysdeps/toy/include/abi-bits/errno.h       |  1 +
+ sysdeps/toy/include/abi-bits/fcntl.h       |  1 +
+ sysdeps/toy/include/abi-bits/gid_t.h       |  1 +
+ sysdeps/toy/include/abi-bits/in.h          |  1 +
+ sysdeps/toy/include/abi-bits/ino_t.h       |  1 +
+ sysdeps/toy/include/abi-bits/limits.h      |  1 +
+ sysdeps/toy/include/abi-bits/mode_t.h      |  1 +
+ sysdeps/toy/include/abi-bits/nlink_t.h     |  1 +
+ sysdeps/toy/include/abi-bits/pid_t.h       |  1 +
+ sysdeps/toy/include/abi-bits/reboot.h      |  1 +
+ sysdeps/toy/include/abi-bits/resource.h    |  1 +
+ sysdeps/toy/include/abi-bits/seek-whence.h |  1 +
+ sysdeps/toy/include/abi-bits/signal.h      |  1 +
+ sysdeps/toy/include/abi-bits/socket.h      |  1 +
+ sysdeps/toy/include/abi-bits/stat.h        |  1 +
+ sysdeps/toy/include/abi-bits/termios.h     |  1 +
+ sysdeps/toy/include/abi-bits/time.h        |  1 +
+ sysdeps/toy/include/abi-bits/uid_t.h       |  1 +
+ sysdeps/toy/include/abi-bits/vm-flags.h    |  1 +
+ sysdeps/toy/include/abi-bits/wait.h        |  1 +
+ sysdeps/toy/include/toy/syscall.h          | 79 ++++++++++++++++++++++
+ sysdeps/toy/meson.build                    | 56 +++++++++++++++
+ 31 files changed, 223 insertions(+)
+ create mode 100644 sysdeps/toy/crt-x86_64/crt0.S
+ create mode 100644 sysdeps/toy/generic/entry.cpp
+ create mode 100644 sysdeps/toy/generic/toy.cpp
+ create mode 120000 sysdeps/toy/include/abi-bits/abi.h
+ create mode 120000 sysdeps/toy/include/abi-bits/auxv.h
+ create mode 120000 sysdeps/toy/include/abi-bits/blkcnt_t.h
+ create mode 120000 sysdeps/toy/include/abi-bits/blksize_t.h
+ create mode 120000 sysdeps/toy/include/abi-bits/dev_t.h
+ create mode 120000 sysdeps/toy/include/abi-bits/errno.h
+ create mode 120000 sysdeps/toy/include/abi-bits/fcntl.h
+ create mode 120000 sysdeps/toy/include/abi-bits/gid_t.h
+ create mode 120000 sysdeps/toy/include/abi-bits/in.h
+ create mode 120000 sysdeps/toy/include/abi-bits/ino_t.h
+ create mode 120000 sysdeps/toy/include/abi-bits/limits.h
+ create mode 120000 sysdeps/toy/include/abi-bits/mode_t.h
+ create mode 120000 sysdeps/toy/include/abi-bits/nlink_t.h
+ create mode 120000 sysdeps/toy/include/abi-bits/pid_t.h
+ create mode 120000 sysdeps/toy/include/abi-bits/reboot.h
+ create mode 120000 sysdeps/toy/include/abi-bits/resource.h
+ create mode 120000 sysdeps/toy/include/abi-bits/seek-whence.h
+ create mode 120000 sysdeps/toy/include/abi-bits/signal.h
+ create mode 120000 sysdeps/toy/include/abi-bits/socket.h
+ create mode 120000 sysdeps/toy/include/abi-bits/stat.h
+ create mode 120000 sysdeps/toy/include/abi-bits/termios.h
+ create mode 120000 sysdeps/toy/include/abi-bits/time.h
+ create mode 120000 sysdeps/toy/include/abi-bits/uid_t.h
+ create mode 120000 sysdeps/toy/include/abi-bits/vm-flags.h
+ create mode 120000 sysdeps/toy/include/abi-bits/wait.h
+ create mode 100644 sysdeps/toy/include/toy/syscall.h
+ create mode 100644 sysdeps/toy/meson.build
+
+diff --git a/meson.build b/meson.build
+index 6c7b4073..b18870a2 100644
+--- a/meson.build
++++ b/meson.build
+@@ -132,6 +132,10 @@ elif host_machine.system() == 'dripos'
+ 	rtdl_include_dirs += include_directories('sysdeps/dripos/include')
+ 	libc_include_dirs += include_directories('sysdeps/dripos/include')
+ 	subdir('sysdeps/dripos')
++elif host_machine.system() == 'toy'
++	rtdl_include_dirs += include_directories('sysdeps/toy/include')
++	libc_include_dirs += include_directories('sysdeps/toy/include')
++	subdir('sysdeps/toy')
+ else
+ 	error('No sysdeps defined for OS: ' + host_machine.system())
+ endif
+diff --git a/sysdeps/toy/crt-x86_64/crt0.S b/sysdeps/toy/crt-x86_64/crt0.S
+new file mode 100644
+index 00000000..3e47559f
+--- /dev/null
++++ b/sysdeps/toy/crt-x86_64/crt0.S
+@@ -0,0 +1,9 @@
++.section .text
++
++.global _start
++
++_start:
++    mov $main, %rdi
++    call mlibc_entry
++
++.size _start, . - _start
+diff --git a/sysdeps/toy/generic/entry.cpp b/sysdeps/toy/generic/entry.cpp
+new file mode 100644
+index 00000000..b88b11db
+--- /dev/null
++++ b/sysdeps/toy/generic/entry.cpp
+@@ -0,0 +1,7 @@
++#include <stdlib.h>
++
++extern "C" void mlibc_entry(int (*main_fn)(int, char **, char **)) {
++  auto result = main_fn(0, nullptr, nullptr);
++
++  exit(result);
++}
+diff --git a/sysdeps/toy/generic/toy.cpp b/sysdeps/toy/generic/toy.cpp
+new file mode 100644
+index 00000000..0a644df4
+--- /dev/null
++++ b/sysdeps/toy/generic/toy.cpp
+@@ -0,0 +1,43 @@
++#include <stddef.h>
++#include <sys/ioctl.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++
++#include <toy/syscall.h>
++
++namespace mlibc {
++
++  void sys_libc_log(const char *msg) {
++    syscall(SYS_LOG, msg);
++  }
++
++  void sys_exit(int status) {
++    syscall(SYS_EXIT, status);
++  }
++
++  void sys_libc_panic() {
++    sys_libc_log("mlibc panic!");
++    sys_exit(1);
++  }
++
++  int sys_tcb_set(void *) UNIMPLEMENTED(sys_tcb_set);
++  int sys_anon_allocate(size_t, void **) UNIMPLEMENTED(sys_anon_allocate);
++  int sys_anon_free(void *, size_t) UNIMPLEMENTED(sys_anon_free);
++  int sys_open(const char *, int, int *) UNIMPLEMENTED(sys_open);
++  int sys_close(int) UNIMPLEMENTED(sys_close);
++  int sys_dup2(int, int, int) UNIMPLEMENTED(sys_dup2);
++  int sys_read(int, void *, size_t, ssize_t *) UNIMPLEMENTED(sys_read);
++  int sys_write(int, const void *, size_t, ssize_t *) UNIMPLEMENTED(sys_write);
++  int sys_seek(int, off_t, int, off_t *) UNIMPLEMENTED(sys_seek);
++  int sys_vm_map(void *, size_t, int, int, int, off_t, void **) UNIMPLEMENTED(sys_vm_map);
++  int sys_vm_unmap(void *, size_t) UNIMPLEMENTED(sys_vm_unmap);
++  int sys_futex_wait(int *, int, const timespec *) UNIMPLEMENTED(sys_futex_wait);
++  int sys_futex_wake(int *) UNIMPLEMENTED(sys_futex_wake);
++  int sys_mkdir(const char *) UNIMPLEMENTED(sys_mkdir);
++  int sys_symlink(const char *, const char *) UNIMPLEMENTED(sys_symlink);
++  int sys_chdir(const char *) UNIMPLEMENTED(sys_chdir);
++  int sys_rmdir(const char *) UNIMPLEMENTED(sys_rmdir);
++  int sys_readlink(const char *, void *, size_t, ssize_t *) UNIMPLEMENTED(sys_readlink);
++  int sys_clock_get(int, time_t *, long *) UNIMPLEMENTED(sys_clock_get);
++
++} // namespace mlibc
+diff --git a/sysdeps/toy/include/abi-bits/abi.h b/sysdeps/toy/include/abi-bits/abi.h
+new file mode 120000
+index 00000000..c9458601
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/abi.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/abi.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/auxv.h b/sysdeps/toy/include/abi-bits/auxv.h
+new file mode 120000
+index 00000000..86157e87
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/auxv.h
+@@ -0,0 +1 @@
++../../../../abis/aero/auxv.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/blkcnt_t.h b/sysdeps/toy/include/abi-bits/blkcnt_t.h
+new file mode 120000
+index 00000000..e9d9f1b4
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/blkcnt_t.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/blkcnt_t.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/blksize_t.h b/sysdeps/toy/include/abi-bits/blksize_t.h
+new file mode 120000
+index 00000000..c6dfb6e0
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/blksize_t.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/blksize_t.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/dev_t.h b/sysdeps/toy/include/abi-bits/dev_t.h
+new file mode 120000
+index 00000000..0c1143b9
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/dev_t.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/dev_t.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/errno.h b/sysdeps/toy/include/abi-bits/errno.h
+new file mode 120000
+index 00000000..589859fb
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/errno.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/errno.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/fcntl.h b/sysdeps/toy/include/abi-bits/fcntl.h
+new file mode 120000
+index 00000000..ea5323ad
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/fcntl.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/fcntl.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/gid_t.h b/sysdeps/toy/include/abi-bits/gid_t.h
+new file mode 120000
+index 00000000..6a772180
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/gid_t.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/gid_t.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/in.h b/sysdeps/toy/include/abi-bits/in.h
+new file mode 120000
+index 00000000..b58c683f
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/in.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/in.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/ino_t.h b/sysdeps/toy/include/abi-bits/ino_t.h
+new file mode 120000
+index 00000000..10d644e7
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/ino_t.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/ino_t.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/limits.h b/sysdeps/toy/include/abi-bits/limits.h
+new file mode 120000
+index 00000000..1aa58942
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/limits.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/limits.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/mode_t.h b/sysdeps/toy/include/abi-bits/mode_t.h
+new file mode 120000
+index 00000000..29d77331
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/mode_t.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/mode_t.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/nlink_t.h b/sysdeps/toy/include/abi-bits/nlink_t.h
+new file mode 120000
+index 00000000..7618c27f
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/nlink_t.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/nlink_t.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/pid_t.h b/sysdeps/toy/include/abi-bits/pid_t.h
+new file mode 120000
+index 00000000..3fd26a7f
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/pid_t.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/pid_t.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/reboot.h b/sysdeps/toy/include/abi-bits/reboot.h
+new file mode 120000
+index 00000000..ecc3ddb9
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/reboot.h
+@@ -0,0 +1 @@
++../../../../abis/linux/x86_64/reboot.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/resource.h b/sysdeps/toy/include/abi-bits/resource.h
+new file mode 120000
+index 00000000..3e59c750
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/resource.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/resource.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/seek-whence.h b/sysdeps/toy/include/abi-bits/seek-whence.h
+new file mode 120000
+index 00000000..3bd41efd
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/seek-whence.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/seek-whence.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/signal.h b/sysdeps/toy/include/abi-bits/signal.h
+new file mode 120000
+index 00000000..b20e5119
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/signal.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/signal.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/socket.h b/sysdeps/toy/include/abi-bits/socket.h
+new file mode 120000
+index 00000000..0e1d6be9
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/socket.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/socket.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/stat.h b/sysdeps/toy/include/abi-bits/stat.h
+new file mode 120000
+index 00000000..82642c3c
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/stat.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/stat.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/termios.h b/sysdeps/toy/include/abi-bits/termios.h
+new file mode 120000
+index 00000000..cfcfe763
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/termios.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/termios.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/time.h b/sysdeps/toy/include/abi-bits/time.h
+new file mode 120000
+index 00000000..97f3d52d
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/time.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/time.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/uid_t.h b/sysdeps/toy/include/abi-bits/uid_t.h
+new file mode 120000
+index 00000000..1113eba6
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/uid_t.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/uid_t.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/vm-flags.h b/sysdeps/toy/include/abi-bits/vm-flags.h
+new file mode 120000
+index 00000000..f1a985e6
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/vm-flags.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/vm-flags.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/abi-bits/wait.h b/sysdeps/toy/include/abi-bits/wait.h
+new file mode 120000
+index 00000000..6d911c7f
+--- /dev/null
++++ b/sysdeps/toy/include/abi-bits/wait.h
+@@ -0,0 +1 @@
++../../../../abis/mlibc/wait.h
+\ No newline at end of file
+diff --git a/sysdeps/toy/include/toy/syscall.h b/sysdeps/toy/include/toy/syscall.h
+new file mode 100644
+index 00000000..d95d2257
+--- /dev/null
++++ b/sysdeps/toy/include/toy/syscall.h
+@@ -0,0 +1,79 @@
++#pragma once
++
++#include <bits/ensure.h>
++#include <stdint.h>
++
++#define SYS_EXIT 0
++#define SYS_LOG 0
++
++#define UNIMPLEMENTED(name)                                                                                                                \
++  {                                                                                                                                        \
++    sys_libc_log("Unimplemented syscall: " #name);                                                                                         \
++    sys_exit(1);                                                                                                                           \
++  }
++
++static uint64_t do_syscall(uint64_t sc) {
++  uint64_t ret;
++
++  asm volatile("int $0x80" : "=a"(ret) : "a"(sc) : "memory");
++
++  return ret;
++}
++
++static uint64_t do_syscall(uint64_t sc, uint64_t arg1) {
++  uint64_t ret;
++
++  asm volatile("int $0x80" : "=a"(ret) : "a"(sc), "D"(arg1) : "memory");
++
++  return ret;
++}
++
++static uint64_t do_syscall(uint64_t sc, uint64_t arg1, uint64_t arg2) {
++  uint64_t ret;
++
++  asm volatile("int $0x80" : "=a"(ret) : "a"(sc), "D"(arg1), "S"(arg2) : "memory");
++
++  return ret;
++}
++
++static uint64_t do_syscall(uint64_t sc, uint64_t arg1, uint64_t arg2, uint64_t arg3) {
++  uint64_t ret;
++
++  asm volatile("int $0x80" : "=a"(ret) : "a"(sc), "D"(arg1), "S"(arg2), "c"(arg3) : "memory");
++
++  return ret;
++}
++
++static uint64_t do_syscall(uint64_t sc, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4) {
++  uint64_t ret;
++
++  asm volatile("int $0x80" : "=a"(ret) : "a"(sc), "D"(arg1), "S"(arg2), "c"(arg3), "d"(arg4) : "memory");
++
++  return ret;
++}
++
++static uint64_t do_syscall(uint64_t sc, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
++  uint64_t ret;
++
++  register uint64_t arg5_reg asm("r8") = arg5;
++
++  asm volatile("int $0x80" : "=a"(ret) : "a"(sc), "D"(arg1), "S"(arg2), "c"(arg3), "d"(arg4), "r"(arg5_reg) : "memory");
++
++  return ret;
++}
++
++static uint64_t do_syscall(uint64_t id, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5, uint64_t arg6) {
++  uint64_t ret;
++
++  register uint64_t arg5_reg asm("r8") = arg5;
++  register uint64_t arg6_reg asm("r9") = arg6;
++
++  asm volatile("int $0x80" : "=a"(ret) : "a"(id), "D"(arg1), "S"(arg2), "c"(arg3), "d"(arg4), "r"(arg5_reg), "r"(arg6_reg) : "memory");
++
++  return ret;
++}
++
++template <typename... T>
++static uint64_t syscall(uint64_t call, T... args) {
++  return do_syscall(call, ((uint64_t) args)...);
++}
+diff --git a/sysdeps/toy/meson.build b/sysdeps/toy/meson.build
+new file mode 100644
+index 00000000..29208eb9
+--- /dev/null
++++ b/sysdeps/toy/meson.build
+@@ -0,0 +1,56 @@
++if not static
++	rtdl_sources += files(
++		'generic/toy.cpp',
++	)
++endif
++
++libc_sources += files(
++	'generic/entry.cpp',
++	'generic/toy.cpp',
++)
++
++if not no_headers
++	install_headers(
++		'include/abi-bits/abi.h',
++		'include/abi-bits/auxv.h',
++		'include/abi-bits/seek-whence.h',
++		'include/abi-bits/vm-flags.h',
++		'include/abi-bits/errno.h',
++		'include/abi-bits/fcntl.h',
++		'include/abi-bits/in.h',
++		'include/abi-bits/resource.h',
++		'include/abi-bits/signal.h',
++		'include/abi-bits/stat.h',
++		'include/abi-bits/socket.h',
++		'include/abi-bits/termios.h',
++		'include/abi-bits/time.h',
++		'include/abi-bits/blkcnt_t.h',
++		'include/abi-bits/blksize_t.h',
++		'include/abi-bits/dev_t.h',
++		'include/abi-bits/gid_t.h',
++		'include/abi-bits/ino_t.h',
++		'include/abi-bits/mode_t.h',
++		'include/abi-bits/nlink_t.h',
++		'include/abi-bits/pid_t.h',
++		'include/abi-bits/uid_t.h',
++		'include/abi-bits/wait.h',
++		'include/abi-bits/limits.h',
++		subdir: 'abi-bits'
++	)
++
++	install_headers(
++		'include/toy/syscall.h',
++		subdir: 'toy'
++	)
++endif
++
++if not headers_only
++	crt = custom_target('crt0',
++		build_by_default: true,
++		command: c_compiler.cmd_array() + ['-c', '-o', '@OUTPUT@', '@INPUT@'],
++		input: 'crt-x86_64/crt0.S',
++		output: 'crt0.o',
++		install: true,
++		install_dir: get_option('libdir')
++	)
++endif
+-- 
+2.35.1
+

@@ -188,3 +188,22 @@ packages:
       - args: ['ninja', 'install']
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
+
+  - name: hello
+    source:
+      subdir: ''
+    tools_required:
+      - host-gcc
+    configure:
+      - args:
+        - 'meson'
+        - '--cross-file'
+        - '@SOURCE_ROOT@/misc/x86_64-toy.cross-file'
+        - '--prefix=/usr'
+        - '-Dbuildtype=debug'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'

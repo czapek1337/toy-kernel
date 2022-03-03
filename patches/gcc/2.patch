@@ -1,0 +1,25 @@
+From e53d79abf657067c56f37b252482f96e776a6f87 Mon Sep 17 00:00:00 2001
+From: czapek1337 <czapek1337@gmail.com>
+Date: Thu, 3 Mar 2022 16:19:33 +0100
+Subject: [PATCH] Add a missing include in libgcov.h
+
+---
+ libgcc/libgcov.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libgcc/libgcov.h b/libgcc/libgcov.h
+index 7b0d367ec..20bbcd2d9 100644
+--- a/libgcc/libgcov.h
++++ b/libgcc/libgcov.h
+@@ -45,6 +45,8 @@
+ #include "libgcc_tm.h"
+ #include "gcov.h"
+ 
++#include <stdint.h>
++
+ #if HAVE_SYS_MMAN_H
+ #include <sys/mman.h>
+ #endif
+-- 
+2.35.1
+

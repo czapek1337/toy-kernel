@@ -6,6 +6,7 @@
 #include <boot/stivale2.h>
 #include <mem/phys.h>
 #include <utils/spin.h>
+#include <utils/vector.h>
 
 #define PTE_P 1ul << 0
 #define PTE_W 1ul << 1
@@ -27,14 +28,29 @@ namespace mem {
     void unmap(vaddr_t virt, size_t size);
   };
 
-  struct address_space_t {
-    utils::spin_lock_t vm_lock;
+  struct mapping_t {
+    vaddr_t start;
+    vaddr_t end;
 
-    page_table_t *pt;
+    uint64_t protection;
+    uint64_t flags;
+  };
+
+  class address_space_t {
+  public:
+    address_space_t();
 
     void map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags);
     void unmap(vaddr_t virt, size_t size);
     void switch_to();
+
+    page_table_t *page_table();
+
+  private:
+    page_table_t *m_pt;
+
+    utils::vector_t<mapping_t> m_mappings;
+    utils::spin_lock_t m_lock;
   };
 
   address_space_t *new_vm();

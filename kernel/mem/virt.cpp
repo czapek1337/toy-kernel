@@ -80,24 +80,32 @@ void mem::page_table_t::unmap(vaddr_t virt, size_t size) {
   }
 }
 
-void mem::address_space_t::map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags) {
-  utils::spin_lock_guard_t lock(vm_lock);
+mem::address_space_t::address_space_t() {
+  m_pt = (page_table_t *) phys_to_virt(phys_alloc(1));
+}
 
-  pt->map(virt, phys, size, flags);
+void mem::address_space_t::map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags) {
+  utils::spin_lock_guard_t lock(m_lock);
+
+  m_pt->map(virt, phys, size, flags);
 }
 
 void mem::address_space_t::unmap(vaddr_t virt, size_t size) {
-  utils::spin_lock_guard_t lock(vm_lock);
+  utils::spin_lock_guard_t lock(m_lock);
 
-  pt->unmap(virt, size);
+  m_pt->unmap(virt, size);
 }
 
 void mem::address_space_t::switch_to() {
-  asm("mov %0, %%cr3" : : "r"((vaddr_t) pt - hhdm_offset));
+  asm("mov %0, %%cr3" : : "r"((vaddr_t) m_pt - hhdm_offset));
+}
+
+mem::page_table_t *mem::address_space_t::page_table() {
+  return m_pt;
 }
 
 void mem::destroy_vm(address_space_t *vm) {
-  pt_destroy_level(vm->pt, 4, 0, 255);
+  pt_destroy_level(vm->page_table(), 4, 0, 255);
 
   delete vm;
 }
@@ -105,10 +113,8 @@ void mem::destroy_vm(address_space_t *vm) {
 mem::address_space_t *mem::new_vm() {
   address_space_t *vm = new address_space_t();
 
-  vm->pt = (page_table_t *) phys_to_virt(phys_alloc(1));
-
   for (size_t i = 256; i < 512; i++) {
-    vm->pt->entries[i] = kernel_pt->entries[i];
+    vm->page_table()->entries[i] = kernel_pt->entries[i];
   }
 
   return vm;

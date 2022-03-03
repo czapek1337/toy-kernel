@@ -4,7 +4,13 @@
 #include <stdint.h>
 
 #include <arch/gdt.h>
-#include <proc/thread.h>
+
+namespace proc {
+
+  // Forward declaration
+  struct thread_t;
+
+} // namespace proc
 
 namespace cpu {
 

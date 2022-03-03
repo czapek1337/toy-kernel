@@ -1,5 +1,3 @@
-# https://github.com/lyre-os/lyre/blob/master/bootstrap.yml :flushed:
-
 sources:
   - name: autoconf-v2.69
     subdir: 'build'

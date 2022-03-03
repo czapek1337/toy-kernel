@@ -1,26 +1,26 @@
 #pragma once
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../interrupts/interrupts.h"
-#include "../mem/virt.h"
-#include "../utils/elf.h"
-#include "../utils/ll.h"
+#include <interrupts/interrupts.h>
+#include <mem/virt.h>
+#include <utils/elf.h>
 
-typedef struct process process_t;
-typedef struct thread thread_t;
+namespace proc {
 
-struct thread {
-  ll_node_t node;
+  struct process_t;
+  struct thread_t;
 
-  size_t tid;
-  size_t exit_code;
+  struct thread_t {
+    size_t tid;
+    size_t exit_code;
 
-  address_space_t *vm;
-  isr_frame_t *regs;
-};
+    mem::address_space_t *vm;
+    interrupts::isr_frame_t *regs;
+  };
 
-thread_t *thread_create(vaddr_t entry, bool is_user);
-thread_t *thread_create_elf(elf64_header_t *elf, bool is_user);
+  thread_t *create_thread(vaddr_t entry, bool is_user);
+  thread_t *create_thread(elf64_header_t *elf, bool is_user);
+
+} // namespace proc

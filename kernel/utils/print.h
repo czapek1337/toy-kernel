@@ -3,16 +3,21 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../proc/cpu.h"
-#include "elf.h"
+#include <proc/cpu.h>
+#include <utils/elf.h>
+#include <utils/utils.h>
 
-void panic_load_symbols(elf64_header_t *elf);
-void __attribute__((noreturn)) panic_backtrace();
+namespace utils {
 
-void println(const char *format, ...);
+  void noreturn print_backtrace();
+
+  void load_kernel_symbols(elf64_header_t *elf);
+  void print_line(const char *format, ...);
+
+} // namespace utils
 
 #define klog(status, format, ...)                                                                                                          \
-  println("\x1b[30;1m(CPU %d) \x1b[37;1m%s:%d " status " \x1b[0m" format, cpu_get()->id, __FILE__, __LINE__, ##__VA_ARGS__)
+  utils::print_line("\x1b[30;1m(CPU %d) \x1b[37;1m%s:%d " status " \x1b[0m" format, cpu::get()->id, __FILE__, __LINE__, ##__VA_ARGS__)
 
 #define klog_debug(format, ...) klog("\x1b[36;1mdebug", format, ##__VA_ARGS__)
 #define klog_info(format, ...) klog("\x1b[32;1minfo", format, ##__VA_ARGS__)
@@ -21,7 +26,7 @@ void println(const char *format, ...);
 #define klog_panic(format, ...)                                                                                                            \
   do {                                                                                                                                     \
     klog_error(format, ##__VA_ARGS__);                                                                                                     \
-    panic_backtrace();                                                                                                                     \
+    utils::print_backtrace();                                                                                                              \
   } while (0)
 
 #define assert(expr)                                                                                                                       \

@@ -2,28 +2,28 @@
 
 #include <stdint.h>
 
-typedef uint8_t elf_byte_t;
+using elf_byte_t = uint8_t;
 
-typedef uint32_t elf32_addr_t;
-typedef uint32_t elf32_off_t;
-typedef int32_t elf32_sword_t;
-typedef uint32_t elf32_word_t;
-typedef uint16_t elf32_half_t;
-typedef uint64_t elf32_lword_t;
+using elf32_addr_t = uint32_t;
+using elf32_off_t = uint32_t;
+using elf32_sword_t = int32_t;
+using elf32_word_t = uint32_t;
+using elf32_half_t = uint16_t;
+using elf32_lword_t = uint64_t;
 
-typedef uint64_t elf64_addr_t;
-typedef uint64_t elf64_off_t;
-typedef int32_t elf64_shalf_t;
+using elf64_addr_t = uint64_t;
+using elf64_off_t = uint64_t;
+using elf64_shalf_t = int32_t;
 
-typedef int32_t elf64_sword_t;
-typedef uint32_t elf64_word_t;
+using elf64_sword_t = int32_t;
+using elf64_word_t = uint32_t;
 
-typedef int64_t elf64_sxword_t;
-typedef uint64_t elf64_xword_t;
-typedef uint64_t elf64_lword_t;
+using elf64_sxword_t = int64_t;
+using elf64_xword_t = uint64_t;
+using elf64_lword_t = uint64_t;
 
-typedef uint32_t elf64_half_t;
-typedef uint16_t elf64_quarter_t;
+using elf64_half_t = uint32_t;
+using elf64_quarter_t = uint16_t;
 
 // e_ident[] identification indices
 #define EI_MAG0 0       // magic (1/4)
@@ -73,7 +73,7 @@ typedef uint16_t elf64_quarter_t;
 #define ELFOSABI_ARM 97         // ARM
 #define ELFOSABI_STANDALONE 255 // standalone application
 
-typedef struct {
+struct elf32_header_t {
   elf_byte_t e_ident[EI_NIDENT]; // identification bytes
   elf32_half_t e_type;           // file type
   elf32_half_t e_machine;        // machine type
@@ -88,9 +88,9 @@ typedef struct {
   elf32_half_t e_shentsize;      // section header entry size
   elf32_half_t e_shnum;          // number of section headers
   elf32_half_t e_shstrndx;       // string table index
-} elf32_header_t;
+};
 
-typedef struct {
+struct elf64_header_t {
   elf_byte_t e_ident[EI_NIDENT]; // identification bytes
   elf64_quarter_t e_type;        // file type
   elf64_quarter_t e_machine;     // machine type
@@ -105,7 +105,7 @@ typedef struct {
   elf64_quarter_t e_shentsize;   // section header entry size
   elf64_quarter_t e_shnum;       // number of section headers
   elf64_quarter_t e_shstrndx;    // string table index
-} elf64_header_t;
+};
 
 // e_type
 #define ET_NONE 0        // no file type
@@ -144,7 +144,7 @@ typedef struct {
 #define EV_NONE 0    // invalid
 #define EV_CURRENT 1 // current
 
-typedef struct {
+struct elf32_section_header_t {
   elf32_word_t sh_name;      // section name
   elf32_word_t sh_type;      // section type
   elf32_word_t sh_flags;     // section flags
@@ -155,9 +155,9 @@ typedef struct {
   elf32_word_t sh_info;      // misc info
   elf32_word_t sh_addralign; // memory alignment
   elf32_word_t sh_entsize;   // table entry size
-} elf32_section_header_t;
+};
 
-typedef struct {
+struct elf64_section_header_t {
   elf64_half_t sh_name;       // section name
   elf64_half_t sh_type;       // section type
   elf64_xword_t sh_flags;     // section flags
@@ -168,7 +168,7 @@ typedef struct {
   elf64_half_t sh_info;       // misc info
   elf64_xword_t sh_addralign; // memory alignment
   elf64_xword_t sh_entsize;   // table entry size
-} elf64_section_header_t;
+};
 
 // special section indices
 #define SHN_UNDEF 0          // undefined
@@ -252,23 +252,23 @@ typedef struct {
 #define SHF_MASKOS 0x0ff00000      // OS-specific semantics
 #define SHF_MASKPROC 0xf0000000    // reserved bits for processor
 
-typedef struct {
+struct elf32_symbol_t {
   elf32_word_t st_name;  // symbol name index in string table
   elf32_addr_t st_value; // type/binding attributes
   elf32_word_t st_size;  // unused
   elf_byte_t st_info;    // section index of symbol
   elf_byte_t st_other;   // value of symbol
   elf32_half_t st_shndx; // size of symbol
-} elf32_symbol_t;
+};
 
-typedef struct {
+struct elf64_symbol_t {
   elf64_half_t st_name;     // symbol name index in string table
   elf_byte_t st_info;       // type/binding attributes
   elf_byte_t st_other;      // unused
   elf64_quarter_t st_shndx; // section index of symbol
   elf64_xword_t st_value;   // value of symbol
   elf64_xword_t st_size;    // size of symbol
-} elf64_symbol_t;
+};
 
 #define ELF32_ST_BIND(x) ((x) >> 4)
 #define ELF32_ST_TYPE(x) (((unsigned int) x) & 0xf)
@@ -306,27 +306,27 @@ typedef struct {
 #define STV_HIDDEN 2    // can only be seen inside own .so
 #define STV_PROTECTED 3 // hidden inside, default outside
 
-typedef struct {
+struct elf32_relocation_t {
   elf32_addr_t r_offset; // offset of relocation
   elf32_word_t r_info;   // symbol table index and type
-} elf32_relocation_t;
+};
 
-typedef struct {
+struct elf32_relocation_add_t {
   elf32_addr_t r_offset;  // offset of relocation
   elf32_word_t r_info;    // symbol table index and type
   elf32_sword_t r_addend; // adjustment value
-} elf32_relocation_add_t;
+};
 
-typedef struct {
+struct elf64_relocation_t {
   elf64_xword_t r_offset; // offset of relocation
   elf64_xword_t r_info;   // symbol table index and type
-} elf64_relocation_t;
+};
 
-typedef struct {
+struct elf64_relocation_add_t {
   elf64_xword_t r_offset;  // offset of relocation
   elf64_xword_t r_info;    // symbol table index and type
   elf64_sxword_t r_addend; // adjustment value
-} elf64_relocation_add_t;
+};
 
 // relocation types
 #define R_386_NONE 0
@@ -356,7 +356,7 @@ typedef struct {
 #define ELF64_R_TYPE(info) ((info) &0xFFFFFFFF)
 #define ELF64_R_INFO(s, t) (((s) << 32) + (uint32_t) (t))
 
-typedef struct {
+struct elf32_program_header_t {
   elf32_word_t p_type;   // segment type
   elf32_off_t p_offset;  // segment offset
   elf32_addr_t p_vaddr;  // virtual address of segment
@@ -365,9 +365,9 @@ typedef struct {
   elf32_word_t p_memsz;  // number of bytes in memory for segment
   elf32_word_t p_flags;  // flags
   elf32_word_t p_align;  // memory alignment
-} elf32_program_header_t;
+};
 
-typedef struct {
+struct elf64_program_header_t {
   elf64_half_t p_type;    // segment type
   elf64_half_t p_flags;   // segment offset
   elf64_off_t p_offset;   // virtual address of segment
@@ -376,7 +376,7 @@ typedef struct {
   elf64_xword_t p_filesz; // number of bytes in memory for segment
   elf64_xword_t p_memsz;  // flags
   elf64_xword_t p_align;  // memory alignment
-} elf64_program_header_t;
+};
 
 // segment types - p_type
 #define PT_NULL 0            // unused
@@ -398,23 +398,23 @@ typedef struct {
 #define PF_R 0x4               // readable
 #define PF_MASKPROC 0xf0000000 // reserved bits for processor
 
-typedef struct {
+struct elf32_dynamic_t {
   elf32_sword_t d_tag; // controls meaning of d_val
 
   union {
     elf32_word_t d_val; // multiple meanings, see d_tag
     elf32_addr_t d_ptr; // program virtual address
   } d_un;
-} elf32_dynamic_t;
+};
 
-typedef struct {
+struct elf64_dynamic_t {
   elf64_xword_t d_tag; // controls meaning of d_val
 
   union {
     elf64_addr_t d_ptr;  // multiple meanings, see d_tag
     elf64_xword_t d_val; // program virtual address
   } d_un;
-} elf64_dynamic_t;
+};
 
 // dynamic array tags - d_tag
 #define DT_NULL 0
@@ -466,7 +466,7 @@ typedef struct {
 #define DF_BIND_NOW 0x00000008
 #define DF_STATIC_TLS 0x00000010
 
-// d ynamic flags - DT_FLAGS_1 .dynamic entry
+// dynamic flags - DT_FLAGS_1 .dynamic entry
 #define DF_1_NOW 0x00000001
 #define DF_1_GLOBAL 0x00000002
 #define DF_1_GROUP 0x00000004
@@ -482,44 +482,44 @@ typedef struct {
 #define DF_1_NODUMP 0x00001000
 #define DF_1_CONLFAT 0x00002000
 
-typedef struct {
+struct elf32_note_header_t {
   elf32_word_t n_namesz;
   elf32_word_t n_descsz;
   elf32_word_t n_type;
-} elf32_note_header_t;
+};
 
-typedef struct {
+struct elf64_note_header_t {
   elf64_half_t n_namesz;
   elf64_half_t n_descsz;
   elf64_half_t n_type;
-} elf64_note_header_t;
+};
 
-typedef struct {
+struct elf32_note_t {
   elf32_word_t namesz;
   elf32_word_t descsz;
   elf32_word_t type;
-} elf32_note_t;
+};
 
-typedef struct {
+struct elf64_note_t {
   elf64_half_t namesz;
   elf64_half_t descsz;
   elf64_half_t type;
-} elf64_note_t;
+};
 
 // values for n_type
 #define NT_PRSTATUS 1 // process status
 #define NT_FPREGSET 2 // floating point registers
 #define NT_PRPSINFO 3 // process state info
 
-typedef struct {
+struct elf32_aux_info_t {
   elf32_sword_t au_id; // 32-bit id
   elf32_word_t au_v;   // 32-bit value
-} elf32_aux_info_t;
+};
 
-typedef struct {
+struct elf64_aux_info_t {
   elf64_shalf_t au_id; // 64-bit id
   elf64_xword_t au_v;  // 64-bit value
-} elf64_aux_info_t;
+};
 
 // AUX ID
 #define AUX_NULL 0

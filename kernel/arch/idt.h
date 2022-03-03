@@ -1,3 +1,7 @@
 #pragma once
 
-void idt_init();
+namespace arch {
+
+  void init_idt();
+
+}

@@ -1,5 +1,9 @@
 #pragma once
 
+#define noreturn __attribute__((noreturn))
+#define packed __attribute__((packed))
+#define aligned(x) __attribute__((aligned(x)))
+
 #define ALIGN_DOWN(value, align) ((value) & ~((align) - (1)))
 #define ALIGN_UP(value, align) ALIGN_DOWN((value) + (align) - (1), align)
 

@@ -1,5 +1,5 @@
-#include "spin.h"
-#include "print.h"
+#include <utils/print.h>
+#include <utils/spin.h>
 
 void spin_lock(spin_lock_t *lock) {
   for (;;) {

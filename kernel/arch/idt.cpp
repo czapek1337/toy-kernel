@@ -1,14 +1,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "gdt.h"
-#include "idt.h"
+#include <arch/gdt.h>
+#include <arch/idt.h>
+#include <utils/utils.h>
 
 #define IDTE_P 1 << 7
 #define IDTE_U 3 << 5
 #define IDTE_INT_GATE 0b1110
 
-typedef struct {
+struct packed interrupt_desc_t {
   uint16_t offset_low;
   uint16_t selector;
   uint8_t ist;
@@ -16,12 +17,12 @@ typedef struct {
   uint16_t offset_mid;
   uint32_t offset_high;
   uint32_t reserved;
-} __attribute__((packed)) interrupt_desc_t;
+};
 
-typedef struct {
+struct packed idtr_t {
   uint16_t limit;
   uint64_t base;
-} __attribute__((packed)) idtr_t;
+};
 
 static interrupt_desc_t idt_entries[256];
 
@@ -39,10 +40,10 @@ static interrupt_desc_t simple_entry(uint64_t offset, uint8_t ist, uint8_t flags
   return entry;
 }
 
-void idt_init() {
-  extern uint64_t isr_stubs[256];
+extern "C" uint64_t isr_stubs[256];
 
-  for (size_t i = 0; i < 256; i++) {
+void arch::init_idt() {
+  for (auto i = 0; i < 256; i++) {
     idt_entries[i] = simple_entry(isr_stubs[i], 0, IDTE_P | IDTE_INT_GATE);
   }
 

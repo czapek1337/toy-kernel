@@ -3,20 +3,26 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../arch/gdt.h"
-#include "../proc/thread.h"
+#include <arch/gdt.h>
+#include <proc/thread.h>
 
-typedef struct cpu_info {
-  struct cpu_info *self;
+namespace cpu {
 
-  size_t id;
-  size_t lapic_id;
+  struct cpu_info_t {
+    cpu_info_t *self;
 
-  thread_t *thread;
-  tss_t tss;
-} cpu_info_t;
+    size_t id;
+    size_t lapic_id;
 
-void cpu_init_bsp();
-void cpu_init(size_t id, size_t lapic_id);
+    arch::gdt_t gdt;
+    arch::tss_t tss;
 
-cpu_info_t *cpu_get();
+    proc::thread_t *thread;
+  };
+
+  void init_bsp();
+  void init_ap(size_t id, size_t lapic_id);
+
+  cpu_info_t *get();
+
+} // namespace cpu

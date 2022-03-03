@@ -1,10 +1,9 @@
 #include <stdarg.h>
-#include <stdbool.h>
 #include <string.h>
 
-#include "../arch/port.h"
-#include "print.h"
-#include "spin.h"
+#include <arch/port.h>
+#include <utils/print.h>
+#include <utils/spin.h>
 
 static spin_lock_t print_lock;
 static elf64_header_t *kernel_elf_header;
@@ -12,12 +11,12 @@ static elf64_section_header_t *kernel_symbol_table;
 static elf64_section_header_t *kernel_string_table;
 
 static void print_char(char ch) {
-  port_out8(0x3f8, ch);
+  Port(0x3f8).out8(ch);
 }
 
 static void print_string_n(const char *string, size_t len) {
-  for (size_t i = 0; i < len; i++) {
-    port_out8(0x3f8, string[i]);
+  for (auto i = 0u; i < len; i++) {
+    Port(0x3f8).out8(string[i]);
   }
 }
 
@@ -31,7 +30,7 @@ static void print_int(int64_t value) {
   if (!value) {
     print_char('0');
   } else {
-    bool sign = value < 0;
+    auto sign = value < 0;
 
     if (sign)
       value = -value;
@@ -58,7 +57,7 @@ static void print_uint(uint64_t value) {
   if (!value) {
     print_char('0');
   } else {
-    int i = 0;
+    auto i = 0;
 
     for (i = 19; value; i--) {
       buffer[i] = (value % 10) + '0';
@@ -75,7 +74,7 @@ static void print_hex(uint64_t value) {
   if (!value) {
     print_string("0x0");
   } else {
-    int i;
+    auto i = 0;
 
     for (i = 15; value; i--) {
       buffer[i] = "0123456789abcdef"[value & 0xf];
@@ -87,34 +86,26 @@ static void print_hex(uint64_t value) {
   }
 }
 
-static bool resolve_symbol(uint64_t rip, const char **name, uint64_t *offset) {
+static elf64_symbol_t *resolve_symbol(uint64_t rip) {
   if (!kernel_elf_header || !kernel_symbol_table || !kernel_string_table)
-    goto error;
+    return nullptr;
 
-  elf64_symbol_t *symbols = (elf64_symbol_t *) ((uintptr_t) kernel_elf_header + kernel_symbol_table->sh_offset);
+  auto symbols = (elf64_symbol_t *) ((uintptr_t) kernel_elf_header + kernel_symbol_table->sh_offset);
 
-  for (size_t i = 0; i < kernel_symbol_table->sh_size / kernel_symbol_table->sh_entsize; i++) {
-    elf64_symbol_t *symbol = &symbols[i];
+  for (auto i = 0u; i < kernel_symbol_table->sh_size / kernel_symbol_table->sh_entsize; i++) {
+    auto symbol = &symbols[i];
 
     if (rip < symbol->st_value || rip > symbol->st_value + symbol->st_size)
       continue;
 
-    if (symbol->st_name < kernel_string_table->sh_size) {
-      *name = (const char *) ((uintptr_t) kernel_elf_header + kernel_string_table->sh_offset + symbol->st_name);
-      *offset = rip - symbol->st_value;
-
-      return true;
-    }
+    if (symbol->st_name < kernel_string_table->sh_size)
+      return symbol;
   }
 
-error:
-  *name = NULL;
-  *offset = 0;
-
-  return false;
+  return nullptr;
 }
 
-void panic_load_symbols(elf64_header_t *elf) {
+void utils::load_kernel_symbols(elf64_header_t *elf) {
   if (memcmp(elf->e_ident, ELFMAG, ELFMAGSZ) != 0)
     klog_panic("Given kernel ELF file is not valid");
 
@@ -134,25 +125,23 @@ void panic_load_symbols(elf64_header_t *elf) {
   assert(kernel_string_table);
 }
 
-void panic_backtrace() {
-  typedef struct {
+void utils::print_backtrace() {
+  struct stack_frame_t {
     uint64_t rbp;
     uint64_t rip;
-  } stack_frame_t;
+  };
 
   stack_frame_t *stack_frame;
 
   asm("mov %%rbp, %0" : "=r"(stack_frame) : : "memory");
 
   while (stack_frame && stack_frame->rip) {
-    const char *name;
+    if (auto symbol = resolve_symbol(stack_frame->rip)) {
+      auto name = (const char *) ((uintptr_t) kernel_elf_header + kernel_string_table->sh_offset + symbol->st_name);
 
-    uint64_t offset;
-
-    if (resolve_symbol(stack_frame->rip, &name, &offset)) {
-      klog_error("Backtrace: %p [%s+%p]", stack_frame->rip, name, offset);
+      klog_error(" => %p [%s+%p]", stack_frame->rip, name, stack_frame->rip - symbol->st_value);
     } else {
-      klog_error("Backtrace: %p [?]", stack_frame->rip);
+      klog_error(" => %p [?]", stack_frame->rip);
     }
 
     stack_frame = (stack_frame_t *) stack_frame->rbp;
@@ -164,7 +153,7 @@ void panic_backtrace() {
   }
 }
 
-void println(const char *format, ...) {
+void utils::print_line(const char *format, ...) {
   va_list args;
 
   va_start(args, format);

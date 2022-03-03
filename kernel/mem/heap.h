@@ -1,13 +1,13 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#include <utils/print.h>
 
-void heap_init();
-void heap_free(void *pointer);
+// TODO: Rewrite this in C++ so it makes sense lol
 
-void *heap_alloc(size_t size);
-void *heap_alloc_zero(size_t size);
+#define ALLOC(type)                                                                                                                        \
+  ({                                                                                                                                       \
+    klog_warn("Allocation request for %d bytes", sizeof(type));                                                                            \
+    (type *) nullptr;                                                                                                                      \
+  })
 
-#define ALLOC(type) heap_alloc(sizeof(type))
-#define ALLOC_ZERO(type) heap_alloc_zero(sizeof(type))
+#define ALLOC_ZERO(type) ALLOC(type)

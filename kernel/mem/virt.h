@@ -3,8 +3,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../boot/stivale2.h"
-#include "phys.h"
+#include <boot/stivale2.h>
+#include <mem/phys.h>
 
 #define PTE_P 1ul << 0
 #define PTE_W 1ul << 1
@@ -15,25 +15,33 @@
 #define PTE_NX 1ul << 63
 #define PTE_ADDR_MASK ~0xffful
 
-typedef uint64_t vaddr_t;
+using vaddr_t = uint64_t;
 
-typedef struct {
-  uint64_t entries[512];
-} page_table_t;
+namespace mem {
 
-typedef struct {
-  page_table_t *pt;
-} address_space_t;
+  struct page_table_t {
+    uint64_t entries[512];
 
-void vm_destroy(address_space_t *vm);
-void vm_map(address_space_t *vm, vaddr_t virt, paddr_t phys, size_t size, uint64_t flags);
-void vm_unmap(address_space_t *vm, vaddr_t virt, size_t size);
-void vm_switch(address_space_t *vm);
+    void map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags);
+    void unmap(vaddr_t virt, size_t size);
+  };
 
-address_space_t *virt_new_vm();
+  struct address_space_t {
+    page_table_t *pt;
 
-void virt_init(struct stivale2_struct_tag_pmrs *pmrs_tag,                       //
-               struct stivale2_struct_tag_kernel_base_address *kernel_base_tag, //
-               struct stivale2_struct_tag_hhdm *hhdm_tag);
+    void map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags);
+    void unmap(vaddr_t virt, size_t size);
+    void switch_to();
+  };
 
-vaddr_t phys_to_virt(paddr_t phys);
+  address_space_t *new_vm();
+
+  void destroy_vm(address_space_t *vm);
+
+  void init_paging(stivale2_struct_tag_pmrs *pmrs_tag,                       //
+                   stivale2_struct_tag_kernel_base_address *kernel_base_tag, //
+                   stivale2_struct_tag_hhdm *hhdm_tag);
+
+  vaddr_t phys_to_virt(paddr_t phys);
+
+} // namespace mem

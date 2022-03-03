@@ -19,19 +19,21 @@ initrd: build/initrd.tar
 clean:
 	@rm -rf build
 
-C_FILES   = $(shell find kernel -type f -name '*.c')
+CPP_FILES   = $(shell find kernel -type f -name '*.cpp')
 ASM_FILES = $(shell find kernel -type f -name '*.asm')
-OBJ_FILES = $(patsubst %,build/%.o,$(C_FILES) $(ASM_FILES))
-DEP_FILES = $(patsubst %,build/%.d,$(C_FILES))
+OBJ_FILES = $(patsubst %,build/%.o,$(CPP_FILES) $(ASM_FILES))
+DEP_FILES = $(patsubst %,build/%.d,$(CPP_FILES))
 
 ASM ?= nasm
 LD  ?= ld
-CC  ?= cc
+CXX ?= c++
 
 ASMFLAGS = -f elf64 -g
 LDFLAGS  = -T misc/kernel.ld -nostdlib -z max-page-size=0x1000 -static
-CFLAGS   = -O0 -g -Wall -Wextra -pipe \
+CXXFLAGS = -I kernel -O0 -g -Wall -Wextra -pipe -std=gnu++20 \
 	-ffreestanding \
+	-fno-exceptions \
+	-fno-rtti \
 	-fno-omit-frame-pointer \
 	-fno-stack-protector \
 	-fno-pic \
@@ -49,9 +51,9 @@ build/kernel.elf: $(OBJ_FILES)
 	@mkdir -p $(dir $@)
 	@$(LD) $^ $(LDFLAGS) -o $@
 
-build/%.c.o: %.c
+build/%.cpp.o: %.cpp
 	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(patsubst %,build/%.d,$<)
+	@$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(patsubst %,build/%.d,$<)
 
 build/%.asm.o: %.asm
 	@mkdir -p $(dir $@)

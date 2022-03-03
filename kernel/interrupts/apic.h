@@ -3,10 +3,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void apic_init();
-void apic_timer_init();
+namespace apic {
 
-void apic_eoi();
-void apic_ipi(size_t lapic_id, uint64_t id);
+  void init();
 
-size_t apic_get_lapic();
+  void send_eoi();
+  void send_ipi(size_t lapic_id, uint64_t id);
+
+  size_t get_lapic();
+
+} // namespace apic

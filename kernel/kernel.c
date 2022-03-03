@@ -55,12 +55,13 @@ void kernel_bsp_main(struct stivale2_struct *boot_info) {
   struct stivale2_struct_tag_pmrs *pmrs_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_PMRS_ID);
   struct stivale2_struct_tag_kernel_base_address *kernel_base_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID);
   struct stivale2_struct_tag_memmap *mmap_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_MEMMAP_ID);
+  struct stivale2_struct_tag_modules *modules_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_MODULES_ID);
   struct stivale2_struct_tag_kernel_file *kernel_file_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_KERNEL_FILE_ID);
   struct stivale2_struct_tag_hhdm *hhdm_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_HHDM_ID);
   struct stivale2_struct_tag_rsdp *rsdp_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_RSDP_ID);
   struct stivale2_struct_tag_smp *smp_tag = find_tag(boot_info, STIVALE2_STRUCT_TAG_SMP_ID);
 
-  assert_msg(pmrs_tag && kernel_base_tag && mmap_tag && hhdm_tag && rsdp_tag && smp_tag, //
+  assert_msg(pmrs_tag && kernel_base_tag && mmap_tag && modules_tag && hhdm_tag && rsdp_tag && smp_tag, //
              "Cannot proceed without one or more required struct tags");
 
   if (kernel_file_tag)
@@ -76,8 +77,16 @@ void kernel_bsp_main(struct stivale2_struct *boot_info) {
   // TODO: Make the scheduler SMP aware :^)
   // smp_init(smp_tag);
 
+  for (size_t i = 0; i < modules_tag->module_count; i++) {
+    struct stivale2_module *module = &modules_tag->modules[i];
+
+    sched_push(thread_create_elf((elf64_header_t *) module->begin, true));
+  }
+
   sched_init();
   apic_init();
+
+  asm("sti" ::: "memory");
 
   while (1) {
     asm("hlt");

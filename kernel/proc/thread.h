@@ -7,11 +7,14 @@
 #include "../interrupts/interrupts.h"
 #include "../mem/virt.h"
 #include "../utils/elf.h"
+#include "../utils/ll.h"
 
 typedef struct process process_t;
 typedef struct thread thread_t;
 
 struct thread {
+  ll_node_t node;
+
   size_t tid;
   size_t exit_code;
 

@@ -3,6 +3,7 @@
 #include "../arch/msr.h"
 #include "../mem/phys.h"
 #include "../mem/virt.h"
+#include "../proc/sched.h"
 #include "../utils/print.h"
 #include "interrupts.h"
 
@@ -29,7 +30,7 @@ static void apic_write(size_t reg, uint32_t val) {
 }
 
 static void apic_timer_handler(isr_frame_t *frame) {
-  (void) frame;
+  sched_preempt(frame);
 }
 
 static void apic_spurious_irq_handler(isr_frame_t *frame) {

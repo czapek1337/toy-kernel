@@ -7,6 +7,7 @@
 #include "mem/phys.h"
 #include "mem/virt.h"
 #include "proc/cpu.h"
+#include "proc/sched.h"
 #include "proc/smp.h"
 #include "utils/print.h"
 
@@ -71,8 +72,12 @@ void kernel_bsp_main(struct stivale2_struct *boot_info) {
   gdt_init_tss();
 
   acpi_init(rsdp_tag);
-  // apic_init();
-  smp_init(smp_tag);
+
+  // TODO: Make the scheduler SMP aware :^)
+  // smp_init(smp_tag);
+
+  sched_init();
+  apic_init();
 
   while (1) {
     asm("hlt");
@@ -85,6 +90,7 @@ void kernel_ap_main(struct stivale2_smp_info *ap_info) {
 
   smp_init_cpu(ap_info);
   gdt_init_tss();
+  apic_init();
 
   while (1) {
     asm("hlt");

@@ -106,9 +106,9 @@ void mem::destroy_vm(address_space_t *vm) {
 }
 
 mem::address_space_t *mem::new_vm() {
-  address_space_t *vm = ALLOC(address_space_t);
+  address_space_t *vm = new address_space_t();
 
-  vm->pt = (page_table_t *) (hhdm_offset + phys_alloc(1));
+  vm->pt = (page_table_t *) phys_to_virt(phys_alloc(1));
 
   for (size_t i = 256; i < 512; i++) {
     vm->pt->entries[i] = kernel_pt->entries[i];
@@ -122,10 +122,13 @@ void mem::init_paging(stivale2_struct_tag_pmrs *pmrs_tag,                       
                       stivale2_struct_tag_hhdm *hhdm_tag)                       //
 {
   hhdm_offset = hhdm_tag->addr;
-  kernel_pt = (page_table_t *) (hhdm_offset + phys_alloc(1));
+  kernel_pt = (page_table_t *) phys_to_virt(phys_alloc(1));
 
   kernel_pt->map(0, 0, GIB(4), PTE_P | PTE_W);
   kernel_pt->map(hhdm_offset, 0, GIB(4), PTE_P | PTE_W);
+
+  // Unmap the null page so we can catch null accesses :^)
+  kernel_pt->unmap(0, KIB(4));
 
   for (auto i = 0u; i < pmrs_tag->entries; i++) {
     auto pmr = &pmrs_tag->pmrs[i];

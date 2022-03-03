@@ -19,7 +19,7 @@ void cpu::init_bsp() {
 }
 
 void cpu::init_ap(size_t id, size_t lapic_id) {
-  auto cpu = ALLOC(cpu_info_t);
+  auto cpu = new cpu_info_t();
 
   cpu->self = cpu;
   cpu->id = id;

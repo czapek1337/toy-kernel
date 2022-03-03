@@ -69,12 +69,13 @@ extern "C" void kernel_bsp_main(stivale2_struct *boot_info) {
 
   mem::init_pmm(mmap_tag);
   mem::init_paging(pmrs_tag, kernel_base_tag, hhdm_tag);
-  // mem::init_heap();
-  arch::init_tss();
+  mem::init_heap();
 
+  arch::init_tss();
   acpi::init(rsdp_tag);
-  scheduler::init();
   apic::init();
+
+  scheduler::init();
 
   asm("sti" ::: "memory");
 

@@ -12,19 +12,19 @@ static void thread_common_setup(proc::thread_t *thread, vaddr_t entry, size_t st
   thread->tid = tid_counter++; // TODO: Replace with atomic operations
   thread->exit_code = 0;
 
-  thread->regs->ip = entry;
-  thread->regs->sp = 0x7fffffff0000 + stack_pages * KIB(4);
-  thread->regs->flags = 0x202;
+  thread->regs.ip = entry;
+  thread->regs.sp = 0x7fffffff0000 + stack_pages * KIB(4);
+  thread->regs.flags = 0x202;
 
   if (is_user) {
-    thread->regs->cs = GDT_USER_CODE_64 | 0x3;
-    thread->regs->ss = GDT_USER_DATA_64 | 0x3;
+    thread->regs.cs = GDT_USER_CODE_64 | 0x3;
+    thread->regs.ss = GDT_USER_DATA_64 | 0x3;
 
     thread->vm->map(0x7fffffff0000, mem::phys_alloc(stack_pages), stack_pages * KIB(4), PTE_P | PTE_W | PTE_U | PTE_NX);
   } else {
-    thread->regs->cs = GDT_CODE_64;
-    thread->regs->ss = GDT_DATA_64;
-    thread->regs->sp = mem::phys_to_virt(mem::phys_alloc(stack_pages)) + stack_pages * KIB(4);
+    thread->regs.cs = GDT_CODE_64;
+    thread->regs.ss = GDT_DATA_64;
+    thread->regs.sp = mem::phys_to_virt(mem::phys_alloc(stack_pages)) + stack_pages * KIB(4);
   }
 }
 
@@ -66,10 +66,9 @@ static vaddr_t thread_load_elf(proc::thread_t *thread, elf64_header_t *elf, vadd
 }
 
 proc::thread_t *proc::create_thread(vaddr_t entry, bool is_user) {
-  auto thread = ALLOC_ZERO(thread_t);
+  auto thread = new thread_t();
 
   thread->vm = mem::new_vm();
-  thread->regs = ALLOC_ZERO(interrupts::isr_frame_t);
 
   thread_common_setup(thread, entry, 2, is_user);
 
@@ -77,10 +76,9 @@ proc::thread_t *proc::create_thread(vaddr_t entry, bool is_user) {
 }
 
 proc::thread_t *proc::create_thread(elf64_header_t *elf, bool is_user) {
-  auto thread = ALLOC_ZERO(thread_t);
+  auto thread = new thread_t();
 
   thread->vm = mem::new_vm();
-  thread->regs = ALLOC_ZERO(interrupts::isr_frame_t);
 
   auto entry = thread_load_elf(thread, elf, 0, is_user);
 

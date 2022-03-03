@@ -17,7 +17,7 @@ namespace proc {
     size_t exit_code;
 
     mem::address_space_t *vm;
-    interrupts::isr_frame_t *regs;
+    interrupts::isr_frame_t regs;
   };
 
   thread_t *create_thread(vaddr_t entry, bool is_user);

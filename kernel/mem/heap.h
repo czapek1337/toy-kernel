@@ -1,13 +1,24 @@
 #pragma once
 
-#include <utils/print.h>
+#include <stddef.h>
+#include <stdint.h>
 
-// TODO: Rewrite this in C++ so it makes sense lol
+namespace mem {
 
-#define ALLOC(type)                                                                                                                        \
-  ({                                                                                                                                       \
-    klog_warn("Allocation request for %d bytes", sizeof(type));                                                                            \
-    (type *) nullptr;                                                                                                                      \
-  })
+  void init_heap();
 
-#define ALLOC_ZERO(type) ALLOC(type)
+  void *heap_alloc(size_t size);
+  void *heap_alloc_zero(size_t size);
+
+  void heap_free(void *pointer);
+
+} // namespace mem
+
+void *operator new(size_t size);
+void *operator new[](size_t size);
+
+void operator delete(void *ptr);
+void operator delete(void *ptr, size_t size);
+
+void operator delete[](void *ptr);
+void operator delete[](void *ptr, size_t size);

@@ -19,7 +19,6 @@
 #define LVT_REG_DIVIDE 0x3e0
 
 static paddr_t apic_base;
-static size_t timer_vec;
 
 static uint32_t apic_read(size_t reg) {
   return *(volatile uint32_t *) phys_to_virt(apic_base + reg);
@@ -40,15 +39,14 @@ static void apic_spurious_irq_handler(isr_frame_t *frame) {
 }
 
 void apic_init() {
+  if (!apic_base) {
+    interrupt_register(0xff, apic_spurious_irq_handler);
+    interrupt_register(0x20, apic_timer_handler);
+  }
+
   apic_base = msr_read(MSR_APIC) & ~0xfff;
 
   apic_write(LAPIC_REG_SPURIOUS, 0x1ff);
-
-  timer_vec = interrupt_alloc_vec();
-
-  interrupt_register(0xff, apic_spurious_irq_handler);
-  interrupt_register(timer_vec, apic_timer_handler);
-
   apic_timer_init();
 }
 
@@ -62,7 +60,7 @@ void apic_timer_init() {
   size_t ticks_in_10ms = 0xffffffff - apic_read(LVT_REG_CURRENT_COUNT);
 
   apic_write(LVT_REG_DIVIDE, 3 /* 16 */);
-  apic_write(LVT_REG_TIMER, timer_vec | 0x20000 /* periodic on irq 32 */);
+  apic_write(LVT_REG_TIMER, 32 | 0x20000 /* periodic */);
   apic_write(LVT_REG_INIT_COUNT, ticks_in_10ms * 10);
 }
 

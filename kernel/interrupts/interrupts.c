@@ -30,9 +30,13 @@ void interrupt_register(size_t vector, isr_handler_t handler) {
 size_t interrupt_alloc_vec() {
   spin_lock(&vector_alloc_lock);
 
+alloc:
   assert_msg(vector_alloc < 0xf0, "Ran out of available interrupt vectors to allocate");
 
   size_t vector = vector_alloc++;
+
+  while (isr_handlers[vector] != 0)
+    goto alloc;
 
   spin_unlock(&vector_alloc_lock);
 

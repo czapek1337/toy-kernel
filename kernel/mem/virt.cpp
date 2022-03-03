@@ -6,8 +6,9 @@
 
 static mem::page_table_t *kernel_pt;
 
+static utils::spin_lock_t vmm_lock;
+
 static vaddr_t hhdm_offset;
-static spin_lock_t vmm_lock;
 
 static mem::page_table_t *pt_get_next(mem::page_table_t *pt, size_t index, bool create_if_missing) {
   if (pt && IS_SET(pt->entries[index], PTE_P))
@@ -83,19 +84,15 @@ void mem::page_table_t::unmap(vaddr_t virt, size_t size) {
 }
 
 void mem::address_space_t::map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags) {
-  spin_lock(&vmm_lock);
+  utils::spin_lock_guard_t lock(vmm_lock);
 
   pt->map(virt, phys, size, flags);
-
-  spin_unlock(&vmm_lock);
 }
 
 void mem::address_space_t::unmap(vaddr_t virt, size_t size) {
-  spin_lock(&vmm_lock);
+  utils::spin_lock_guard_t lock(vmm_lock);
 
   pt->unmap(virt, size);
-
-  spin_unlock(&vmm_lock);
 }
 
 void mem::address_space_t::switch_to() {

@@ -5,7 +5,8 @@
 #include <utils/print.h>
 #include <utils/spin.h>
 
-static spin_lock_t print_lock;
+static utils::spin_lock_t print_lock;
+
 static elf64_header_t *kernel_elf_header;
 static elf64_section_header_t *kernel_symbol_table;
 static elf64_section_header_t *kernel_string_table;
@@ -158,7 +159,7 @@ void utils::print_line(const char *format, ...) {
 
   va_start(args, format);
 
-  spin_lock(&print_lock);
+  spin_lock_guard_t lock(print_lock);
 
   while (1) {
     while (*format && *format != '%') {
@@ -215,6 +216,4 @@ void utils::print_line(const char *format, ...) {
   va_end(args);
 
   print_char('\n');
-
-  spin_unlock(&print_lock);
 }

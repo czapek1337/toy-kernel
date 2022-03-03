@@ -6,9 +6,11 @@
 #include <utils/utils.h>
 
 static uint8_t *bitmap_data;
+
 static size_t bitmap_length;
 static size_t bitmap_allocation_hint;
-static spin_lock_t pmm_lock;
+
+static utils::spin_lock_t pmm_lock;
 
 static void bitmap_set(size_t bit, bool state) {
   auto index = bit / 8;
@@ -95,7 +97,7 @@ void mem::init_pmm(stivale2_struct_tag_memmap *memmap_tag) {
 }
 
 paddr_t mem::phys_alloc(size_t pages) {
-  spin_lock(&pmm_lock);
+  utils::spin_lock_guard_t lock(pmm_lock);
 
   auto allocation = bitmap_find_unused(bitmap_allocation_hint, pages);
 
@@ -104,8 +106,6 @@ try_alloc:
     bitmap_allocation_hint = allocation + pages;
 
     bitmap_set_range(allocation, pages, true);
-
-    spin_unlock(&pmm_lock);
 
     memset((void *) (allocation * 4096), 0, pages * 4096);
 
@@ -125,9 +125,7 @@ try_alloc:
 void mem::phys_free(paddr_t addr, size_t pages) {
   assert_msg((addr & 0xfff) == 0, "Attempt to free an unaligned physical address");
 
-  spin_lock(&pmm_lock);
+  utils::spin_lock_guard_t lock(pmm_lock);
 
   bitmap_set_range(addr / 4096, pages, false);
-
-  spin_unlock(&pmm_lock);
 }

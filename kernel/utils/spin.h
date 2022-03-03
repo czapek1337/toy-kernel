@@ -3,12 +3,32 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define SPIN_UNLOCKED 0
-#define SPIN_LOCKED 1
+namespace utils {
 
-typedef uint64_t spin_lock_t;
+  class spin_lock_t {
+  public:
+    bool try_lock();
 
-void spin_lock(spin_lock_t *lock);
-void spin_unlock(spin_lock_t *lock);
+    void lock();
+    void unlock();
 
-bool spin_try_lock(spin_lock_t *lock);
+  private:
+    uint64_t m_lock;
+  };
+
+  template <typename T>
+  class spin_lock_guard_t {
+  public:
+    spin_lock_guard_t(T &lock) : m_lock(&lock) {
+      m_lock->lock();
+    }
+
+    ~spin_lock_guard_t() {
+      m_lock->unlock();
+    }
+
+  private:
+    T *m_lock;
+  };
+
+} // namespace utils

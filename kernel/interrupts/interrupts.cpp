@@ -4,7 +4,7 @@
 #include <utils/spin.h>
 
 static size_t vector_alloc = 32;
-static spin_lock_t vector_alloc_lock;
+static utils::spin_lock_t vector_alloc_lock;
 static interrupts::isr_handler_t isr_handlers[256 - 32];
 
 extern "C" void interrupt_handle(interrupts::isr_frame_t *frame) {
@@ -31,7 +31,7 @@ void interrupts::register_handler(size_t vector, isr_handler_t handler) {
 }
 
 size_t interrupts::alloc_vec() {
-  spin_lock(&vector_alloc_lock);
+  utils::spin_lock_guard_t lock(vector_alloc_lock);
 
 alloc:
   assert_msg(vector_alloc < 0xf0, "Ran out of available interrupt vectors to allocate");
@@ -40,8 +40,6 @@ alloc:
 
   while (isr_handlers[vector] != 0)
     goto alloc;
-
-  spin_unlock(&vector_alloc_lock);
 
   return vector;
 }

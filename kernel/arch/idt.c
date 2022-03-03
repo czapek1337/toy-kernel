@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "gdt.h"
 #include "idt.h"
 
 #define IDTE_P 1 << 7
@@ -21,25 +22,25 @@ typedef struct {
   uint64_t base;
 } __attribute__((packed)) idtr_t;
 
-static interrupt_desc_t idt_desc[256];
+static interrupt_desc_t idt_entries[256];
 
 void idt_init() {
   extern uint64_t isr_stubs[256];
 
   for (size_t i = 0; i < 256; i++) {
-    idt_desc[i].offset_low = isr_stubs[i] & 0xffff;
-    idt_desc[i].selector = 0x28;
-    idt_desc[i].ist = 0;
-    idt_desc[i].flags = IDTE_P | IDTE_INT_GATE;
-    idt_desc[i].offset_mid = (isr_stubs[i] >> 16) & 0xffff;
-    idt_desc[i].offset_high = (isr_stubs[i] >> 32) & 0xffffffff;
-    idt_desc[i].reserved = 0;
+    idt_entries[i].offset_low = isr_stubs[i] & 0xffff;
+    idt_entries[i].selector = GDT_CODE_64;
+    idt_entries[i].ist = 0;
+    idt_entries[i].flags = IDTE_P | IDTE_INT_GATE;
+    idt_entries[i].offset_mid = (isr_stubs[i] >> 16) & 0xffff;
+    idt_entries[i].offset_high = (isr_stubs[i] >> 32) & 0xffffffff;
+    idt_entries[i].reserved = 0;
   }
 
   idtr_t idtr;
 
-  idtr.limit = sizeof(idt_desc) - 1;
-  idtr.base = (uintptr_t) idt_desc;
+  idtr.limit = sizeof(idt_entries) - 1;
+  idtr.base = (uintptr_t) idt_entries;
 
   asm("lidt %0" : : "m"(idtr) : "memory");
   asm("sti" ::: "memory");

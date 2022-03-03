@@ -68,12 +68,11 @@ void kernel_bsp_main(struct stivale2_struct *boot_info) {
   phys_init(mmap_tag);
   virt_init(pmrs_tag, kernel_base_tag, hhdm_tag);
   heap_init();
-  smp_init(smp_tag);
+  gdt_init_tss();
 
   acpi_init(rsdp_tag);
-  apic_init();
-
-  klog_info("Hello, world!");
+  // apic_init();
+  smp_init(smp_tag);
 
   while (1) {
     asm("hlt");
@@ -81,9 +80,11 @@ void kernel_bsp_main(struct stivale2_struct *boot_info) {
 }
 
 void kernel_ap_main(struct stivale2_smp_info *ap_info) {
-  smp_init_cpu(ap_info);
+  idt_init();
+  gdt_init();
 
-  klog_info("Hello, multi-core world!");
+  smp_init_cpu(ap_info);
+  gdt_init_tss();
 
   while (1) {
     asm("hlt");

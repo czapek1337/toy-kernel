@@ -1,11 +1,15 @@
-#include "cpu.h"
+#include <string.h>
+
 #include "../arch/msr.h"
 #include "../mem/heap.h"
 #include "../mem/virt.h"
+#include "cpu.h"
 
 cpu_info_t bsp_cpu;
 
 void cpu_init_bsp() {
+  memset(&bsp_cpu, 0, sizeof(cpu_info_t));
+
   bsp_cpu.self = &bsp_cpu;
   bsp_cpu.id = 0;
   bsp_cpu.lapic_id = 0;

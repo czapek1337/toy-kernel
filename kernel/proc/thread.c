@@ -18,13 +18,13 @@ static void thread_common_setup(thread_t *thread, vaddr_t entry, size_t stack_pa
   thread->regs->flags = 0x202;
 
   if (is_user) {
-    thread->regs->cs = GDT_USER_CODE64 | 0x3;
-    thread->regs->ss = GDT_USER_DATA64 | 0x3;
+    thread->regs->cs = GDT_USER_CODE_64 | 0x3;
+    thread->regs->ss = GDT_USER_DATA_64 | 0x3;
 
     vm_map(thread->vm, 0x7fffffff0000, phys_alloc(stack_pages), stack_pages * KIB(4), PTE_P | PTE_W | PTE_U | PTE_NX);
   } else {
-    thread->regs->cs = GDT_CODE64;
-    thread->regs->ss = GDT_DATA64;
+    thread->regs->cs = GDT_CODE_64;
+    thread->regs->ss = GDT_DATA_64;
     thread->regs->sp = phys_to_virt(phys_alloc(stack_pages)) + stack_pages * KIB(4);
   }
 }

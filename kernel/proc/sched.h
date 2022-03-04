@@ -11,7 +11,7 @@
 namespace scheduler {
 
   void init();
-  void schedule(smarter::shared_ptr<proc::thread_t> thread);
+  void schedule(smarter::shared_ptr<thread_t> thread);
   void preempt(interrupts::isr_frame_t *frame);
 
 } // namespace scheduler

@@ -5,11 +5,9 @@
 #include <mem/virt.h>
 #include <proc/cpu.h>
 
-cpu::cpu_info_t bsp_cpu;
+static cpu::cpu_info_t bsp_cpu;
 
 void cpu::init_bsp() {
-  memset(&bsp_cpu, 0, sizeof(cpu_info_t));
-
   bsp_cpu.self = &bsp_cpu;
   bsp_cpu.id = 0;
   bsp_cpu.lapic_id = 0;
@@ -19,7 +17,7 @@ void cpu::init_bsp() {
 }
 
 void cpu::init_ap(size_t id, size_t lapic_id) {
-  auto cpu = new cpu_info_t();
+  auto cpu = frg::construct<cpu_info_t>(mem::kernel_allocator);
 
   cpu->self = cpu;
   cpu->id = id;

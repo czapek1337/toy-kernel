@@ -24,8 +24,6 @@ void acpi::init_hpet(hpet_header_t *table) {
   hpet_base = table->address.address;
   hpet_period = hpet_read(HPET_GENERAL_CAPS_AND_ID) >> 32;
 
-  kinfo("HPET period is equal to {}ns", hpet_period / 1000000);
-
   hpet_write(HPET_GENERAL_CONFIG, 0);
   hpet_write(HPET_MAIN_COUNTER, 0);
   hpet_write(HPET_GENERAL_CONFIG, 1);

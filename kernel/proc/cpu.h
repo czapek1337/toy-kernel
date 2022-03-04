@@ -19,7 +19,7 @@ namespace cpu {
     arch::gdt_t gdt;
     arch::tss_t tss;
 
-    smarter::shared_ptr<proc::thread_t> thread;
+    smarter::shared_ptr<scheduler::thread_t> thread;
   };
 
   void init_bsp();

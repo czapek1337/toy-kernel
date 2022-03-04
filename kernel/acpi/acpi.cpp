@@ -30,6 +30,6 @@ void acpi::init(stivale2_struct_tag_rsdp *rsdp_tag) {
       acpi_discover_table(mem::phys_to_virt(xsdt->entries[i]));
     }
   } else {
-    klog_panic("Unknown ACPI revision, expected 0 or 2, got %d", rsdp->revision);
+    kpanic("Unknown ACPI revision, expected 0 or 2, got {}", rsdp->revision);
   }
 }

@@ -28,7 +28,7 @@ static void pt_map_page(mem::page_table_t *pml4, uintptr_t virt, uintptr_t phys,
   auto pml1_index = (virt >> 12) & 0x1ff;
 
   if (IS_SET(pml1->entries[pml1_index], PTE_P))
-    klog_panic("Tried to map a virtual address %p that's already mapped to %p", virt, pml1->entries[pml1_index] & PTE_ADDR_MASK);
+    kpanic("Tried to map a virtual address 0x{:x} that's already mapped to 0x{:x}", virt, pml1->entries[pml1_index] & PTE_ADDR_MASK);
 
   pml1->entries[pml1_index] = flags | phys;
 }
@@ -41,7 +41,7 @@ static void pt_unmap_page(mem::page_table_t *pml4, uintptr_t virt) {
   auto pml1_index = (virt >> 12) & 0x1ff;
 
   if (!pml1 || IS_CLEAR(pml1->entries[pml1_index], PTE_P))
-    klog_panic("Tried to unmap a virtual address %p that isn't mapped", virt);
+    kpanic("Tried to unmap a virtual address 0x{:x} that isn't mapped", virt);
 
   pml1->entries[pml1_index] = 0;
 

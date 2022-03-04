@@ -15,19 +15,19 @@ extern "C" void interrupt_handle(interrupts::isr_frame_t *frame) {
 
 void interrupts::handle(isr_frame_t *frame) {
   if (frame->vec < 32)
-    klog_panic("An unexpected exception occurred: %x", frame->vec);
+    kpanic("An unexpected exception occurred: 0x{:x}", frame->vec);
 
   if (auto handler = isr_handlers[frame->vec - 32]) {
     handler(frame);
   } else {
-    klog_panic("An unexpected interrupt arrived: %x", frame->vec);
+    kpanic("An unexpected interrupt arrived: 0x{:x}", frame->vec);
   }
 
   apic::send_eoi();
 }
 
 void interrupts::register_handler(size_t vector, isr_handler_t handler) {
-  kassert_msg(isr_handlers[vector - 32] == 0, "Tried to register a handler for an existing interrupt vector %x", vector);
+  kassert_msg(isr_handlers[vector - 32] == 0, "Tried to register a handler for an existing interrupt vector 0x{:x}", vector);
 
   isr_handlers[vector - 32] = handler;
 }

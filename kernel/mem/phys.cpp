@@ -14,7 +14,7 @@ static void bitmap_set(size_t bit, bool state) {
   auto index = bit / 8;
   auto mask = BIT_MASK(bit % 8);
 
-  kassert_msg(index < bitmap_length, "Tried to index outside bitmap bounds (%d >= %d)", index, bitmap_length);
+  kassert_msg(index < bitmap_length, "Tried to index outside bitmap bounds ({} >= {})", index, bitmap_length);
 
   if (state)
     bitmap_data[index] |= mask;
@@ -52,12 +52,12 @@ void mem::init_pmm(stivale2_struct_tag_memmap *memmap_tag) {
   uintptr_t max_address = 0;
   uintptr_t bitmap_address = 0;
 
-  klog_info("Current system memory map:");
+  kinfo("Current system memory map:");
 
   for (auto i = 0u; i < memmap_tag->entries; i++) {
     auto entry = &memmap_tag->memmap[i];
 
-    klog_info("=> base=%p, length=%p, type=%d", entry->base, entry->length, entry->type);
+    kinfo("=> base=0x{:x}, length=0x{:x}, type={}", entry->base, entry->length, entry->type);
 
     if (entry->type != STIVALE2_MMAP_USABLE)
       continue;
@@ -117,7 +117,7 @@ try_alloc:
     goto try_alloc;
   }
 
-  klog_panic("Failed to allocate %d pages of physical memory", pages);
+  kpanic("Failed to allocate {} pages of physical memory", pages);
 }
 
 void mem::phys_free(uintptr_t addr, size_t pages) {

@@ -19,12 +19,12 @@ static void hpet_write(size_t reg, uint64_t val) {
 }
 
 void acpi::init_hpet(hpet_header_t *table) {
-  kassert_msg(table->address.address_space_id == 0, "Unsupported HPET address space: %d", table->address.address_space_id);
+  kassert_msg(table->address.address_space_id == 0, "Unsupported HPET address space: {}", table->address.address_space_id);
 
   hpet_base = table->address.address;
   hpet_period = hpet_read(HPET_GENERAL_CAPS_AND_ID) >> 32;
 
-  klog_info("HPET period is equal to %dns", hpet_period / 1000000);
+  kinfo("HPET period is equal to {}ns", hpet_period / 1000000);
 
   hpet_write(HPET_GENERAL_CONFIG, 0);
   hpet_write(HPET_MAIN_COUNTER, 0);

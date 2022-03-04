@@ -13,13 +13,13 @@ static frg::vector<smarter::shared_ptr<proc::thread_t>, mem::kernel_allocator_t>
 
 // TODO: Move this to a separate file?
 static void sched_syscall_handler(interrupts::isr_frame_t *frame) {
-  klog_debug("System call %x with params: (%x, %x, %x, %x, %x, %x)", //
-             frame->rax, frame->rdi, frame->rsi, frame->rdx, frame->rcx, frame->r8, frame->r9);
+  kdebug("System call 0x{:x} with params: (0x{:x}, 0x{:x}, 0x{:x}, 0x{:x}, 0x{:x}, 0x{:x})", //
+         frame->rax, frame->rdi, frame->rsi, frame->rdx, frame->rcx, frame->r8, frame->r9);
 }
 
 static void sched_idle_thread() {
   while (1) {
-    klog_debug("System is currently idle");
+    kdebug("System is currently idle");
 
     asm("hlt");
   }

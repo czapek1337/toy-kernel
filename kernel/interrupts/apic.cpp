@@ -33,7 +33,7 @@ static void apic_timer_handler(interrupts::isr_frame_t *frame) {
 }
 
 static void apic_spurious_irq_handler([[maybe_unused]] interrupts::isr_frame_t *frame) {
-  klog_warn("A spurious interrupt was fired, possible hardware failure");
+  kwarn("A spurious interrupt was fired, possible hardware failure");
 }
 
 static void apic_timer_init() {

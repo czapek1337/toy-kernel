@@ -3,14 +3,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <smarter.hpp>
+
 #include <arch/gdt.h>
-
-namespace proc {
-
-  // Forward declaration
-  struct thread_t;
-
-} // namespace proc
+#include <proc/thread.h>
 
 namespace cpu {
 
@@ -23,7 +19,7 @@ namespace cpu {
     arch::gdt_t gdt;
     arch::tss_t tss;
 
-    proc::thread_t *thread;
+    smarter::shared_ptr<proc::thread_t> thread;
   };
 
   void init_bsp();

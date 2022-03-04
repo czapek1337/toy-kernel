@@ -5,7 +5,7 @@
 #include <mem/virt.h>
 #include <utils/print.h>
 
-static void acpi_discover_table(vaddr_t addr) {
+static void acpi_discover_table(uintptr_t addr) {
   auto table = (acpi::sdt_header_t *) addr;
 
   if (memcmp(table->signature, "HPET", 4) == 0)

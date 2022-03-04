@@ -47,6 +47,11 @@ static T *find_tag(stivale2_struct *boot_info, uint64_t id) {
   return nullptr;
 }
 
+using initializer_fn_t = void (*)();
+
+extern "C" initializer_fn_t __init_array_start[];
+extern "C" initializer_fn_t __init_array_end[];
+
 extern "C" void kernel_bsp_main(stivale2_struct *boot_info) {
   cpu::init_bsp();
 
@@ -62,14 +67,16 @@ extern "C" void kernel_bsp_main(stivale2_struct *boot_info) {
   auto rsdp_tag = find_tag<stivale2_struct_tag_rsdp>(boot_info, STIVALE2_STRUCT_TAG_RSDP_ID);
   auto smp_tag = find_tag<stivale2_struct_tag_smp>(boot_info, STIVALE2_STRUCT_TAG_SMP_ID);
 
-  assert(pmrs_tag && kernel_base_tag && mmap_tag && modules_tag && hhdm_tag && rsdp_tag && smp_tag);
+  kassert(pmrs_tag && kernel_base_tag && mmap_tag && modules_tag && hhdm_tag && rsdp_tag && smp_tag);
 
   if (kernel_file_tag)
     utils::load_kernel_symbols((elf64_header_t *) kernel_file_tag->kernel_file);
 
   mem::init_pmm(mmap_tag);
   mem::init_paging(pmrs_tag, kernel_base_tag, hhdm_tag);
-  mem::init_heap();
+
+  for (auto init_fn = __init_array_start; init_fn != __init_array_end; init_fn++)
+    (*init_fn)();
 
   arch::init_tss();
   acpi::init(rsdp_tag);

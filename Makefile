@@ -30,14 +30,16 @@ CXX ?= c++
 
 ASMFLAGS = -f elf64 -g
 LDFLAGS  = -T misc/kernel.ld -nostdlib -z max-page-size=0x1000 -static
-CXXFLAGS = -I kernel -O0 -g -Wall -Wextra -pipe -std=gnu++20 \
+CXXFLAGS = -O0 -g -Wall -Wextra -pipe -std=gnu++20 \
+	-I kernel \
+	-I frigg/include \
+	-I libsmarter/include \
 	-ffreestanding \
 	-fno-exceptions \
 	-fno-rtti \
 	-fno-omit-frame-pointer \
 	-fno-stack-protector \
 	-fno-use-cxa-atexit \
-	-fsized-deallocation \
 	-fno-pic \
 	-mno-80387 \
 	-mno-mmx \

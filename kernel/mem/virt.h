@@ -3,10 +3,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <frg/spinlock.hpp>
+#include <frg/vector.hpp>
+#include <smarter.hpp>
+
 #include <boot/stivale2.h>
+#include <mem/heap.h>
 #include <mem/phys.h>
-#include <utils/spin.h>
-#include <utils/vector.h>
 
 #define PTE_P 1ul << 0
 #define PTE_W 1ul << 1
@@ -17,20 +20,18 @@
 #define PTE_NX 1ul << 63
 #define PTE_ADDR_MASK ~0xffful
 
-using vaddr_t = uint64_t;
-
 namespace mem {
 
   struct page_table_t {
     uint64_t entries[512];
 
-    void map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags);
-    void unmap(vaddr_t virt, size_t size);
+    void map(uintptr_t virt, uintptr_t phys, size_t size, uint64_t flags);
+    void unmap(uintptr_t virt, size_t size);
   };
 
   struct mapping_t {
-    vaddr_t start;
-    vaddr_t end;
+    uintptr_t start;
+    uintptr_t end;
 
     uint64_t protection;
     uint64_t flags;
@@ -40,8 +41,8 @@ namespace mem {
   public:
     address_space_t();
 
-    void map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags);
-    void unmap(vaddr_t virt, size_t size);
+    void map(uintptr_t virt, uintptr_t phys, size_t size, uint64_t flags);
+    void unmap(uintptr_t virt, size_t size);
     void switch_to();
 
     page_table_t *page_table();
@@ -49,18 +50,19 @@ namespace mem {
   private:
     page_table_t *m_pt;
 
-    utils::vector_t<mapping_t> m_mappings;
-    utils::spin_lock_t m_lock;
+    frg::vector<mapping_t, mem::kernel_allocator_t> m_mappings;
+    frg::ticket_spinlock m_lock;
   };
 
-  address_space_t *new_vm();
+  smarter::shared_ptr<address_space_t> new_vm();
 
-  void destroy_vm(address_space_t *vm);
+  void destroy_vm(smarter::shared_ptr<address_space_t> vm);
 
   void init_paging(stivale2_struct_tag_pmrs *pmrs_tag,                       //
                    stivale2_struct_tag_kernel_base_address *kernel_base_tag, //
                    stivale2_struct_tag_hhdm *hhdm_tag);
 
-  vaddr_t phys_to_virt(paddr_t phys);
+  uintptr_t phys_to_virt(uintptr_t phys);
+  uintptr_t virt_to_phys(uintptr_t virt);
 
 } // namespace mem

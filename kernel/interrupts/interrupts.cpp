@@ -1,10 +1,12 @@
+#include <frg/mutex.hpp>
+#include <frg/spinlock.hpp>
+
 #include <interrupts/apic.h>
 #include <interrupts/interrupts.h>
 #include <utils/print.h>
-#include <utils/spin.h>
 
 static size_t vector_alloc = 32;
-static utils::spin_lock_t vector_alloc_lock;
+static frg::ticket_spinlock vector_alloc_lock;
 static interrupts::isr_handler_t isr_handlers[256 - 32];
 
 extern "C" void interrupt_handle(interrupts::isr_frame_t *frame) {
@@ -25,16 +27,16 @@ void interrupts::handle(isr_frame_t *frame) {
 }
 
 void interrupts::register_handler(size_t vector, isr_handler_t handler) {
-  assert_msg(isr_handlers[vector - 32] == 0, "Tried to register a handler for an existing interrupt vector %x", vector);
+  kassert_msg(isr_handlers[vector - 32] == 0, "Tried to register a handler for an existing interrupt vector %x", vector);
 
   isr_handlers[vector - 32] = handler;
 }
 
 size_t interrupts::alloc_vec() {
-  utils::spin_lock_guard_t lock(vector_alloc_lock);
+  frg::unique_lock lock(vector_alloc_lock);
 
 alloc:
-  assert_msg(vector_alloc < 0xf0, "Ran out of available interrupt vectors to allocate");
+  kassert_msg(vector_alloc < 0xf0, "Ran out of available interrupt vectors to allocate");
 
   auto vector = vector_alloc++;
 

@@ -7,7 +7,7 @@
 #define HPET_GENERAL_CONFIG 0x10
 #define HPET_MAIN_COUNTER 0xf0
 
-static paddr_t hpet_base;
+static uintptr_t hpet_base;
 static size_t hpet_period;
 
 static uint64_t hpet_read(size_t reg) {
@@ -19,7 +19,7 @@ static void hpet_write(size_t reg, uint64_t val) {
 }
 
 void acpi::init_hpet(hpet_header_t *table) {
-  assert_msg(table->address.address_space_id == 0, "Unsupported HPET address space: %d", table->address.address_space_id);
+  kassert_msg(table->address.address_space_id == 0, "Unsupported HPET address space: %d", table->address.address_space_id);
 
   hpet_base = table->address.address;
   hpet_period = hpet_read(HPET_GENERAL_CAPS_AND_ID) >> 32;

@@ -1,8 +1,8 @@
 #include <string.h>
 
 #include <mem/phys.h>
+#include <mem/virt.h>
 #include <utils/print.h>
-#include <utils/spin.h>
 #include <utils/utils.h>
 
 static uint8_t *bitmap_data;
@@ -10,13 +10,11 @@ static uint8_t *bitmap_data;
 static size_t bitmap_length;
 static size_t bitmap_allocation_hint;
 
-static utils::spin_lock_t pmm_lock;
-
 static void bitmap_set(size_t bit, bool state) {
   auto index = bit / 8;
   auto mask = BIT_MASK(bit % 8);
 
-  assert_msg(index < bitmap_length, "Tried to index outside bitmap bounds (%d >= %d)", index, bitmap_length);
+  kassert_msg(index < bitmap_length, "Tried to index outside bitmap bounds (%d >= %d)", index, bitmap_length);
 
   if (state)
     bitmap_data[index] |= mask;
@@ -51,13 +49,15 @@ static size_t bitmap_find_unused(size_t start, size_t bits) {
 }
 
 void mem::init_pmm(stivale2_struct_tag_memmap *memmap_tag) {
-  paddr_t max_address = 0;
-  paddr_t bitmap_address = 0;
+  uintptr_t max_address = 0;
+  uintptr_t bitmap_address = 0;
+
+  klog_info("Current system memory map:");
 
   for (auto i = 0u; i < memmap_tag->entries; i++) {
     auto entry = &memmap_tag->memmap[i];
 
-    klog_info("Memory map: address=%p, length=%p, type=%d", entry->base, entry->length, entry->type);
+    klog_info("=> base=%p, length=%p, type=%d", entry->base, entry->length, entry->type);
 
     if (entry->type != STIVALE2_MMAP_USABLE)
       continue;
@@ -75,7 +75,7 @@ void mem::init_pmm(stivale2_struct_tag_memmap *memmap_tag) {
       bitmap_address = entry->base;
   }
 
-  assert_msg(bitmap_address != 0, "Could not find a suitable place in memory to host the bitmap");
+  kassert_msg(bitmap_address != 0, "Could not find a suitable place in memory to host the bitmap");
 
   bitmap_data = (uint8_t *) bitmap_address;
   bitmap_length = bitmap_size;
@@ -96,9 +96,7 @@ void mem::init_pmm(stivale2_struct_tag_memmap *memmap_tag) {
   bitmap_set_range(bitmap_address / 4096, ALIGN_UP(bitmap_size / 4096, 4096), true);
 }
 
-paddr_t mem::phys_alloc(size_t pages) {
-  utils::spin_lock_guard_t lock(pmm_lock);
-
+uintptr_t mem::phys_alloc(size_t pages) {
   auto allocation = bitmap_find_unused(bitmap_allocation_hint, pages);
 
 try_alloc:
@@ -122,10 +120,16 @@ try_alloc:
   klog_panic("Failed to allocate %d pages of physical memory", pages);
 }
 
-void mem::phys_free(paddr_t addr, size_t pages) {
-  assert_msg((addr & 0xfff) == 0, "Attempt to free an unaligned physical address");
-
-  utils::spin_lock_guard_t lock(pmm_lock);
+void mem::phys_free(uintptr_t addr, size_t pages) {
+  kassert_msg((addr & 0xfff) == 0, "Attempt to free an unaligned physical address");
 
   bitmap_set_range(addr / 4096, pages, false);
+}
+
+uintptr_t mem::physical_policy_t::map(size_t length) {
+  return mem::phys_to_virt(mem::phys_alloc(ALIGN_UP(length, 4096) / 4096));
+}
+
+void mem::physical_policy_t::unmap(uintptr_t pointer, size_t length) {
+  mem::phys_free(mem::virt_to_phys(pointer), ALIGN_UP(length, 4096) / 4096);
 }

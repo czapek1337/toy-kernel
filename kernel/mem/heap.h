@@ -3,14 +3,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <frg/slab.hpp>
+#include <frg/spinlock.hpp>
+
+#include <mem/phys.h>
+
 namespace mem {
 
-  void init_heap();
+  using kernel_pool_t = frg::slab_pool<physical_policy_t, frg::ticket_spinlock>;
+  using kernel_allocator_t = frg::slab_allocator<physical_policy_t, frg::ticket_spinlock>;
 
-  void *heap_alloc(size_t size);
-  void *heap_alloc_zero(size_t size);
-
-  void heap_free(void *pointer);
+  inline kernel_pool_t allocator_pool(phys_policy);
+  inline kernel_allocator_t kernel_allocator(&allocator_pool);
 
 } // namespace mem
 

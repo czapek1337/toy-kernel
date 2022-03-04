@@ -1,0 +1,6 @@
+[submodule "frigg"]
+	path = frigg
+	url = https://github.com/managarm/frigg.git
+[submodule "libsmarter"]
+	path = libsmarter
+	url = https://github.com/managarm/libsmarter.git

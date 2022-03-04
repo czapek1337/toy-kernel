@@ -8,7 +8,7 @@
 
 static uint64_t tid_counter = 0;
 
-static void thread_common_setup(proc::thread_t *thread, vaddr_t entry, size_t stack_pages, bool is_user) {
+static void thread_common_setup(smarter::shared_ptr<proc::thread_t> thread, uintptr_t entry, size_t stack_pages, bool is_user) {
   thread->tid = tid_counter++; // TODO: Replace with atomic operations
   thread->exit_code = 0;
 
@@ -28,7 +28,7 @@ static void thread_common_setup(proc::thread_t *thread, vaddr_t entry, size_t st
   }
 }
 
-static vaddr_t thread_load_elf(proc::thread_t *thread, elf64_header_t *elf, vaddr_t load_offset, bool is_user) {
+static uintptr_t thread_load_elf(smarter::shared_ptr<proc::thread_t> thread, elf64_header_t *elf, uintptr_t load_offset, bool is_user) {
   auto phdrs = (elf64_program_header_t *) ((uintptr_t) elf + elf->e_phoff);
   auto entry = elf->e_entry;
 
@@ -65,8 +65,8 @@ static vaddr_t thread_load_elf(proc::thread_t *thread, elf64_header_t *elf, vadd
   return entry;
 }
 
-proc::thread_t *proc::create_thread(vaddr_t entry, bool is_user) {
-  auto thread = new thread_t();
+smarter::shared_ptr<proc::thread_t> proc::create_thread(uintptr_t entry, bool is_user) {
+  auto thread = smarter::make_shared<thread_t>();
 
   thread->vm = mem::new_vm();
 
@@ -75,8 +75,8 @@ proc::thread_t *proc::create_thread(vaddr_t entry, bool is_user) {
   return thread;
 }
 
-proc::thread_t *proc::create_thread(elf64_header_t *elf, bool is_user) {
-  auto thread = new thread_t();
+smarter::shared_ptr<proc::thread_t> proc::create_thread(elf64_header_t *elf, bool is_user) {
+  auto thread = smarter::make_shared<thread_t>();
 
   thread->vm = mem::new_vm();
 

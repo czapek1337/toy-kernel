@@ -1,13 +1,15 @@
 #include <string.h>
 
+#include <frg/mutex.hpp>
+#include <frg/spinlock.hpp>
+#include <frg/vector.hpp>
+
 #include <proc/cpu.h>
 #include <proc/sched.h>
 #include <utils/print.h>
-#include <utils/spin.h>
-#include <utils/vector.h>
 
-static utils::spin_lock_t scheduler_lock;
-static utils::vector_t<proc::thread_t *> thread_queue;
+static frg::ticket_spinlock scheduler_lock;
+static frg::vector<smarter::shared_ptr<proc::thread_t>, mem::kernel_allocator_t> thread_queue(mem::kernel_allocator);
 
 // TODO: Move this to a separate file?
 static void sched_syscall_handler(interrupts::isr_frame_t *frame) {
@@ -17,6 +19,8 @@ static void sched_syscall_handler(interrupts::isr_frame_t *frame) {
 
 static void sched_idle_thread() {
   while (1) {
+    klog_debug("System is currently idle");
+
     asm("hlt");
   }
 }
@@ -24,35 +28,30 @@ static void sched_idle_thread() {
 void scheduler::init() {
   interrupts::register_handler(IRQ_SYSCALL, sched_syscall_handler);
 
-  schedule(proc::create_thread((vaddr_t) sched_idle_thread, false));
+  schedule(proc::create_thread((uintptr_t) sched_idle_thread, false));
 }
 
-void scheduler::schedule(proc::thread_t *thread) {
-  utils::spin_lock_guard_t lock(scheduler_lock);
+void scheduler::schedule(smarter::shared_ptr<proc::thread_t> thread) {
+  frg::unique_lock lock(scheduler_lock);
 
   thread_queue.push(thread);
 }
 
-void scheduler::preempt([[maybe_unused]] interrupts::isr_frame_t *frame) {
-  utils::spin_lock_guard_t lock(scheduler_lock);
-
+// TODO: Make this an actual scheduler? lol
+//
+// Currently because of the switch to using frigg/libsmarter I had to get rid
+// of the every so primitive scheduler because I haven't figured out a way
+// to make it work with frigg, soon it will turn into a fully working on tho :^)
+void scheduler::preempt(interrupts::isr_frame_t *frame) {
   auto cpu = cpu::get();
+  auto thread = thread_queue.front();
 
-  if (thread_queue.size() == 0)
-    return;
-
-  if (cpu->thread)
-    thread_queue.push(cpu->thread);
-
-  auto next_thread = thread_queue[0];
-
-  thread_queue.remove(next_thread);
+  thread->vm->switch_to();
 
   if (cpu->thread)
     memcpy(&cpu->thread->regs, frame, sizeof(interrupts::isr_frame_t));
 
-  memcpy(frame, &next_thread->regs, sizeof(interrupts::isr_frame_t));
+  cpu->thread = thread;
 
-  cpu->thread = next_thread;
-  cpu->thread->vm->switch_to();
+  memcpy(frame, &thread->regs, sizeof(interrupts::isr_frame_t));
 }

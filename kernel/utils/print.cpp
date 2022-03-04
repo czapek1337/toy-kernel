@@ -1,11 +1,14 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include <arch/port.h>
-#include <utils/print.h>
-#include <utils/spin.h>
+#include <frg/mutex.hpp>
+#include <frg/spinlock.hpp>
 
-static utils::spin_lock_t print_lock;
+#include <arch/port.h>
+#include <proc/cpu.h>
+#include <utils/print.h>
+
+static frg::ticket_spinlock print_lock;
 
 static elf64_header_t *kernel_elf_header;
 static elf64_section_header_t *kernel_symbol_table;
@@ -106,61 +109,7 @@ static elf64_symbol_t *resolve_symbol(uint64_t rip) {
   return nullptr;
 }
 
-void utils::load_kernel_symbols(elf64_header_t *elf) {
-  if (memcmp(elf->e_ident, ELFMAG, ELFMAGSZ) != 0)
-    klog_panic("Given kernel ELF file is not valid");
-
-  kernel_elf_header = elf;
-
-  for (size_t i = 0; i < elf->e_shnum; i++) {
-    elf64_section_header_t *section = (elf64_section_header_t *) ((uintptr_t) elf + elf->e_shoff + elf->e_shentsize * i);
-
-    if (section->sh_type == SHT_SYMTAB && !kernel_symbol_table) {
-      kernel_symbol_table = section;
-    } else if (section->sh_type == SHT_STRTAB && kernel_symbol_table && kernel_symbol_table->sh_link == i) {
-      kernel_string_table = section;
-    }
-  }
-
-  assert(kernel_symbol_table);
-  assert(kernel_string_table);
-}
-
-void utils::print_backtrace() {
-  struct stack_frame_t {
-    uint64_t rbp;
-    uint64_t rip;
-  };
-
-  stack_frame_t *stack_frame;
-
-  asm("mov %%rbp, %0" : "=r"(stack_frame) : : "memory");
-
-  while (stack_frame && stack_frame->rip) {
-    if (auto symbol = resolve_symbol(stack_frame->rip)) {
-      auto name = (const char *) ((uintptr_t) kernel_elf_header + kernel_string_table->sh_offset + symbol->st_name);
-
-      klog_error(" => %p [%s+%p]", stack_frame->rip, name, stack_frame->rip - symbol->st_value);
-    } else {
-      klog_error(" => %p [?]", stack_frame->rip);
-    }
-
-    stack_frame = (stack_frame_t *) stack_frame->rbp;
-  }
-
-  while (1) {
-    asm("cli");
-    asm("hlt");
-  }
-}
-
-void utils::print_line(const char *format, ...) {
-  va_list args;
-
-  va_start(args, format);
-
-  spin_lock_guard_t lock(print_lock);
-
+static void print_args(const char *format, va_list args) {
   while (1) {
     while (*format && *format != '%') {
       print_char(*format++);
@@ -212,8 +161,77 @@ void utils::print_line(const char *format, ...) {
       break;
     }
   }
+}
+
+static void print_format(const char *format, ...) {
+  va_list args;
+
+  va_start(args, format);
+
+  print_args(format, args);
 
   va_end(args);
+}
 
+void utils::load_kernel_symbols(elf64_header_t *elf) {
+  if (memcmp(elf->e_ident, ELFMAG, ELFMAGSZ) != 0)
+    klog_panic("Given kernel ELF file is not valid");
+
+  kernel_elf_header = elf;
+
+  for (size_t i = 0; i < elf->e_shnum; i++) {
+    elf64_section_header_t *section = (elf64_section_header_t *) ((uintptr_t) elf + elf->e_shoff + elf->e_shentsize * i);
+
+    if (section->sh_type == SHT_SYMTAB && !kernel_symbol_table) {
+      kernel_symbol_table = section;
+    } else if (section->sh_type == SHT_STRTAB && kernel_symbol_table && kernel_symbol_table->sh_link == i) {
+      kernel_string_table = section;
+    }
+  }
+
+  kassert(kernel_symbol_table);
+  kassert(kernel_string_table);
+}
+
+void utils::print_backtrace() {
+  struct stack_frame_t {
+    uint64_t rbp;
+    uint64_t rip;
+  };
+
+  stack_frame_t *stack_frame;
+
+  asm("mov %%rbp, %0" : "=r"(stack_frame) : : "memory");
+
+  while (stack_frame && stack_frame->rip) {
+    if (auto symbol = resolve_symbol(stack_frame->rip)) {
+      auto name = (const char *) ((uintptr_t) kernel_elf_header + kernel_string_table->sh_offset + symbol->st_name);
+
+      klog_error("=> %p [%s+%p]", stack_frame->rip, name, stack_frame->rip - symbol->st_value);
+    } else {
+      klog_error("=> %p [?]", stack_frame->rip);
+    }
+
+    stack_frame = (stack_frame_t *) stack_frame->rbp;
+  }
+
+  while (1) {
+    asm("cli");
+    asm("hlt");
+  }
+}
+
+void utils::print_line(const char *status, const char *file, size_t line, const char *format, ...) {
+  frg::unique_lock lock(print_lock);
+
+  va_list args;
+
+  va_start(args, format);
+
+  print_format("\x1b[30;1m(CPU %d) ", cpu::get()->id);
+  print_format("\x1b[37;1m%s:%d %s \x1b[0m", file, line, status);
+  print_args(format, args);
   print_char('\n');
+
+  va_end(args);
 }

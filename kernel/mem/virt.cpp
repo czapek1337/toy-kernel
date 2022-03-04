@@ -1,11 +1,12 @@
+#include <frg/mutex.hpp>
+
 #include <mem/heap.h>
 #include <mem/virt.h>
 #include <utils/print.h>
 #include <utils/utils.h>
 
 static mem::page_table_t *kernel_pt;
-
-static vaddr_t hhdm_offset;
+static uintptr_t hhdm_offset;
 
 static mem::page_table_t *pt_get_next(mem::page_table_t *pt, size_t index, bool create_if_missing) {
   if (pt && IS_SET(pt->entries[index], PTE_P))
@@ -19,7 +20,7 @@ static mem::page_table_t *pt_get_next(mem::page_table_t *pt, size_t index, bool 
   return (mem::page_table_t *) mem::phys_to_virt(pt->entries[index] & PTE_ADDR_MASK);
 }
 
-static void pt_map_page(mem::page_table_t *pml4, vaddr_t virt, paddr_t phys, uint64_t flags) {
+static void pt_map_page(mem::page_table_t *pml4, uintptr_t virt, uintptr_t phys, uint64_t flags) {
   auto pml3 = pt_get_next(pml4, (virt >> 39) & 0x1ff, true);
   auto pml2 = pt_get_next(pml3, (virt >> 30) & 0x1ff, true);
   auto pml1 = pt_get_next(pml2, (virt >> 21) & 0x1ff, true);
@@ -32,7 +33,7 @@ static void pt_map_page(mem::page_table_t *pml4, vaddr_t virt, paddr_t phys, uin
   pml1->entries[pml1_index] = flags | phys;
 }
 
-static void pt_unmap_page(mem::page_table_t *pml4, vaddr_t virt) {
+static void pt_unmap_page(mem::page_table_t *pml4, uintptr_t virt) {
   auto pml3 = pt_get_next(pml4, (virt >> 39) & 0x1ff, false);
   auto pml2 = pt_get_next(pml3, (virt >> 30) & 0x1ff, false);
   auto pml1 = pt_get_next(pml2, (virt >> 21) & 0x1ff, false);
@@ -58,62 +59,60 @@ static void pt_destroy_level(mem::page_table_t *pt, size_t level, size_t start, 
       pt_destroy_level(next_pml, level - 1, 0, 512);
   }
 
-  mem::phys_free((paddr_t) pt - hhdm_offset, 1);
+  mem::phys_free(mem::virt_to_phys((uintptr_t) pt), 1);
 }
 
-void mem::page_table_t::map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags) {
-  assert_msg((virt & 0xfff) == 0, "Virtual address must be page aligned");
-  assert_msg((phys & 0xfff) == 0, "Physical address must be page aligned");
-  assert_msg((size & 0xfff) == 0, "Size must be expressed in pages");
+void mem::page_table_t::map(uintptr_t virt, uintptr_t phys, size_t size, uint64_t flags) {
+  kassert_msg((virt & 0xfff) == 0, "Virtual address must be page aligned");
+  kassert_msg((phys & 0xfff) == 0, "Physical address must be page aligned");
+  kassert_msg((size & 0xfff) == 0, "Size must be expressed in pages");
 
-  for (size_t i = 0; i < size / 4096; i++) {
+  for (auto i = 0u; i < size / 4096; i++) {
     pt_map_page(this, virt + i * 4096, phys + i * 4096, flags);
   }
 }
 
-void mem::page_table_t::unmap(vaddr_t virt, size_t size) {
-  assert_msg((virt & 0xfff) == 0, "Virtual address must be page aligned");
-  assert_msg((size & 0xfff) == 0, "Size must be expressed in pages");
+void mem::page_table_t::unmap(uintptr_t virt, size_t size) {
+  kassert_msg((virt & 0xfff) == 0, "Virtual address must be page aligned");
+  kassert_msg((size & 0xfff) == 0, "Size must be expressed in pages");
 
-  for (size_t i = 0; i < size / 4096; i++) {
+  for (auto i = 0u; i < size / 4096; i++) {
     pt_unmap_page(this, virt + i * 4096);
   }
 }
 
-mem::address_space_t::address_space_t() {
+mem::address_space_t::address_space_t() : m_mappings(mem::kernel_allocator) {
   m_pt = (page_table_t *) phys_to_virt(phys_alloc(1));
 }
 
-void mem::address_space_t::map(vaddr_t virt, paddr_t phys, size_t size, uint64_t flags) {
-  utils::spin_lock_guard_t lock(m_lock);
+void mem::address_space_t::map(uintptr_t virt, uintptr_t phys, size_t size, uint64_t flags) {
+  frg::unique_lock lock(m_lock);
 
   m_pt->map(virt, phys, size, flags);
 }
 
-void mem::address_space_t::unmap(vaddr_t virt, size_t size) {
-  utils::spin_lock_guard_t lock(m_lock);
+void mem::address_space_t::unmap(uintptr_t virt, size_t size) {
+  frg::unique_lock lock(m_lock);
 
   m_pt->unmap(virt, size);
 }
 
 void mem::address_space_t::switch_to() {
-  asm("mov %0, %%cr3" : : "r"((vaddr_t) m_pt - hhdm_offset));
+  asm("mov %0, %%cr3" : : "r"(virt_to_phys((uintptr_t) m_pt)));
 }
 
 mem::page_table_t *mem::address_space_t::page_table() {
   return m_pt;
 }
 
-void mem::destroy_vm(address_space_t *vm) {
+void mem::destroy_vm(smarter::shared_ptr<address_space_t> vm) {
   pt_destroy_level(vm->page_table(), 4, 0, 255);
-
-  delete vm;
 }
 
-mem::address_space_t *mem::new_vm() {
-  address_space_t *vm = new address_space_t();
+smarter::shared_ptr<mem::address_space_t> mem::new_vm() {
+  auto vm = smarter::make_shared<address_space_t>();
 
-  for (size_t i = 256; i < 512; i++) {
+  for (auto i = 256; i < 512; i++) {
     vm->page_table()->entries[i] = kernel_pt->entries[i];
   }
 
@@ -148,9 +147,15 @@ void mem::init_paging(stivale2_struct_tag_pmrs *pmrs_tag,                       
     kernel_pt->map(pmr->base, phys_addr, ALIGN_UP(pmr->length, 4096), map_flags);
   }
 
-  asm("mov %0, %%cr3" : : "r"((vaddr_t) kernel_pt - hhdm_offset));
+  asm("mov %0, %%cr3" : : "r"(virt_to_phys((uintptr_t) kernel_pt)));
 }
 
-vaddr_t mem::phys_to_virt(paddr_t phys) {
+uintptr_t mem::phys_to_virt(uintptr_t phys) {
   return phys + hhdm_offset;
+}
+
+uintptr_t mem::virt_to_phys(uintptr_t virt) {
+  kassert(virt >= hhdm_offset);
+
+  return virt - hhdm_offset;
 }

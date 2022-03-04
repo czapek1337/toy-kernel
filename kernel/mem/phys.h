@@ -5,14 +5,20 @@
 
 #include <boot/stivale2.h>
 
-using paddr_t = uint64_t;
-
 namespace mem {
 
   void init_pmm(stivale2_struct_tag_memmap *mmap_tag);
 
-  paddr_t phys_alloc(size_t pages);
+  uintptr_t phys_alloc(size_t pages);
 
-  void phys_free(paddr_t addr, size_t pages);
+  void phys_free(uintptr_t addr, size_t pages);
+
+  struct physical_policy_t {
+    uintptr_t map(size_t length);
+
+    void unmap(uintptr_t pointer, size_t length);
+  };
+
+  inline physical_policy_t phys_policy;
 
 } // namespace mem

@@ -18,7 +18,7 @@
 #define LVT_REG_TIMER 0x320
 #define LVT_REG_DIVIDE 0x3e0
 
-static paddr_t apic_base;
+static uintptr_t apic_base;
 
 static uint32_t apic_read(size_t reg) {
   return *(volatile uint32_t *) mem::phys_to_virt(apic_base + reg);
